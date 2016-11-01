@@ -1,6 +1,6 @@
 Ripple
 ------
-**Ripple** is an audio library that handles a variety of cases for music and sound effects.
+**Ripple** is an audio library for LÖVE that handles a variety of cases for music and sound effects.
 
 Installation
 ============
