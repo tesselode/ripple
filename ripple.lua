@@ -83,11 +83,22 @@ function Sound:play(options)
   table.insert(self._instances, instance)
   self._time = 0
   self._playing = true
+  for interval, f in pairs(self.every) do
+    self._timers[interval] = self:_parseTime(interval)
+  end
 end
 
 function Sound:update(dt)
   if self._playing then
     self._time = self._time + dt
+    for interval, f in pairs(self.every) do
+      local t = self._timers
+      t[interval] = t[interval] - dt
+      while t[interval] <= 0 do
+        t[interval] = t[interval] + self:_parseTime(interval)
+        f()
+      end
+    end
     if self._time >= self:_getLength() then
       self._playing = false
       self.onEnd()
@@ -99,6 +110,7 @@ function Sound:stop()
   for i = 1, #self._instances do
     self._instances[i]._source:stop()
   end
+  self._playing = false
   self:_clean()
 end
 
@@ -114,6 +126,8 @@ local function newSound(filename, options)
     _instances = {},
     _playing = false,
     _time = 0,
+    _timers = {},
+    every = {},
   }
   setmetatable(sound, {
     __index = function(self, k)
@@ -133,6 +147,7 @@ local function newSound(filename, options)
       end
     end,
   })
+  -- todo: add an assert to make sure the tags actually exist
   for i = 1, #options.tags do
     sound:_tag(options.tags[i])
   end
