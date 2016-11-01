@@ -1,8 +1,11 @@
 local ripple = require 'ripple'
 
+testTag = ripple.newTag()
+
 local testSound = ripple.newSound('loop.ogg', {
   bpm = 95,
   length = '2m',
+  tags = {testTag},
 })
 testSound.onEnd = function() testSound:play() end
 testSound.every['.5b'] = function() print '\t\teigth' end
@@ -16,6 +19,9 @@ end
 function love.keypressed(key)
   if key == 'p' then testSound:play() end
   if key == 's' then testSound:stop() end
+  if key == '5' then
+    testTag.volume.v = .5
+  end
 
   if key == 'escape' then love.event.quit() end
 end

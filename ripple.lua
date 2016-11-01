@@ -34,21 +34,21 @@ function Tag:_updateVolume()
   end
 end
 
-function Tag:_getVolume()
-  return self._volume
-end
-
-function Tag:_setVolume(volume)
-  self._volume = volume
-  self:_updateVolume()
-end
-
 function Tag:_getFinalVolume()
   local v = self._volume
   for i = 1, #self._parents do
     v = v * self._parents[i]:_getFinalVolume()
   end
   return v
+end
+
+function Tag:getVolume()
+  return self._volume
+end
+
+function Tag:setVolume(volume)
+  self._volume = volume
+  self:_updateVolume()
 end
 
 function Tag:tag(tag)
@@ -69,6 +69,10 @@ local function newTag()
     _parents = {},
     _volume = 1,
   }, {__index = Tag})
+  tag.volume = setmetatable({}, {
+    __index = function(t, k) return tag:getVolume() end,
+    __newindex = function(t, k, v) tag:setVolume(v) end,
+  })
   return tag
 end
 
@@ -182,6 +186,13 @@ local function newSound(filename, options)
     every = {},
     _timers = {},
   }, {__index = Sound})
+  sound.volume = setmetatable({}, {
+    __index = function(t, k) return sound:getVolume() end,
+    __newindex = function(t, k, v) sound:setVolume(v) end,
+  })
+  for i = 1, #options.tags do
+    sound:tag(options.tags[i])
+  end
   return sound
 end
 
