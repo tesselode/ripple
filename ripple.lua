@@ -1,8 +1,8 @@
 local Instance = {}
 
-function Instance:isPlaying() return self._source:isPlaying() end
+function Instance:_isPlaying() return self._source:isPlaying() end
 
-function Instance:stop() self._source:stop() end
+function Instance:_stop() self._source:stop() end
 
 local function newInstance(sound, options)
   options = options or {}
@@ -21,7 +21,7 @@ local Sound = {}
 
 function Sound:_clean()
   for i = #self._instances, 1, -1 do
-    if not self._instances[i]._source:isPlaying() then
+    if not self._instances[i]:_isPlaying() then
       table.remove(self._instances, i)
     end
   end
@@ -35,7 +35,7 @@ end
 
 function Sound:stop()
   for i = 1, #self._instances do
-    self._instances[i]:stop()
+    self._instances[i]:_stop()
   end
   self:_clean()
 end
