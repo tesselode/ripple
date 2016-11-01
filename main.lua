@@ -7,7 +7,12 @@ testTagB:_setVolume(.1)
 local testSound = ripple.newSound('boop.ogg')
 
 function love.keypressed(key)
-  if key == 'p' then testSound:play() end
+  if key == 'p' then
+    testSound:play {
+      volume = love.math.random(),
+      pitch = 2,
+    }
+  end
   if key == 's' then testSound:stop() end
   if key == '5' then testTagA:_setVolume(.5) end
   if key == 'a' then testSound:tag(testTagA) end
@@ -17,5 +22,5 @@ function love.keypressed(key)
 end
 
 function love.draw()
-  love.graphics.print(#testSound._children)
+  love.graphics.print(#testSound._children..'\n'..testSound:_getFinalVolume())
 end

@@ -83,15 +83,17 @@ function Instance:_stop()
   self._source:stop()
 end
 
-local function newInstance(sound)
+local function newInstance(sound, options)
+  options = options or {}
   local instance = setmetatable({
     _children = {},
     _parents = {},
-    _volume = 1,
+    _volume = options.volume or 1,
     _source = sound._source:clone(),
   }, {__index = Instance})
   instance:tag(sound)
   instance:_updateVolume()
+  instance._source:setPitch(options.pitch or 1)
   instance._source:play()
   return instance
 end
@@ -107,7 +109,6 @@ end
 
 function Sound:play(options)
   self:_clean()
-  options = options or {}
   local instance = newInstance(self, options)
 end
 
