@@ -101,21 +101,58 @@ end
 
 local Sound = setmetatable({}, {__index = Tag})
 
+function Sound:_parseTime(value)
+  local time, units = value:match '(.*)([sbm])'
+  time = tonumber(time)
+  if units == 's' then
+    return time
+  elseif units == 'b' then
+    assert(self._bpm, 'Must set the BPM to use beats and measures as units')
+    return 60/self._bpm * time
+  elseif units == 'm' then
+    assert(self._bpm, 'Must set the BPM to use beats and measures as units')
+    return 60/self._bpm * time * 4
+  end
+end
+
+function Sound:_getLength()
+  if self._length then
+    return self:_parseTime(self._length)
+  else
+    return self._source:getDuration()
+  end
+end
+
 function Sound:_clean()
   removeByFilter(self._children, function(instance)
     return not instance._source:isPlaying()
   end)
 end
 
+function Sound.onEnd() end
+
 function Sound:play(options)
   self:_clean()
   local instance = newInstance(self, options)
+  self._playing = true
+  self._time = 0
+end
+
+function Sound:update(dt)
+  if self._playing then
+    self._time = self._time + dt
+    if self._time >= self:_getLength() then
+      self._playing = false
+      self.onEnd()
+    end
+  end
 end
 
 function Sound:stop()
   for i = 1, #self._children do
     self._children[i]:_stop()
   end
+  self._playing = false
   self:_clean()
 end
 
@@ -127,6 +164,10 @@ local function newSound(filename, options)
     _parents = {},
     _volume = 1,
     _source = love.audio.newSource(filename),
+    _bpm = options.bpm,
+    _length = options.length,
+    _playing = false,
+    _time = 0,
   }, {__index = Sound})
   return sound
 end
