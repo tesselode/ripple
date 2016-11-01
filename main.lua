@@ -1,10 +1,13 @@
 local ripple = require 'ripple'
 
-local testSound = ripple.newSound('boop.ogg', {
-  bpm = 180,
-  length = '1m',
+local testSound = ripple.newSound('loop.ogg', {
+  bpm = 95,
+  length = '2m',
 })
 testSound.onEnd = function() testSound:play() end
+testSound.every['.5b'] = function() print '\t\teigth' end
+testSound.every['1b'] = function() print '\tbeat' end
+testSound.every['1m'] = function() print 'measure' end
 
 function love.update(dt)
   testSound:update(dt)

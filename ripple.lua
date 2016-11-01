@@ -136,11 +136,22 @@ function Sound:play(options)
   local instance = newInstance(self, options)
   self._playing = true
   self._time = 0
+  for interval, f in pairs(self.every) do
+    self._timers[interval] = self:_parseTime(interval)
+  end
 end
 
 function Sound:update(dt)
   if self._playing then
     self._time = self._time + dt
+    for interval, f in pairs(self.every) do
+      local t = self._timers
+      t[interval] = t[interval] - dt
+      while t[interval] <= 0 do
+        t[interval] = t[interval] + self:_parseTime(interval)
+        f()
+      end
+    end
     if self._time >= self:_getLength() then
       self._playing = false
       self.onEnd()
@@ -168,6 +179,8 @@ local function newSound(filename, options)
     _length = options.length,
     _playing = false,
     _time = 0,
+    every = {},
+    _timers = {},
   }, {__index = Sound})
   return sound
 end
