@@ -3,7 +3,19 @@ local ripple = require 'ripple'
 local testTagA = ripple.newTag()
 local testTagB = ripple.newTag()
 testTagB.volume = .5
-local testSound = ripple.newSound('boop.ogg', {testTagA, testTagB})
+local testSound = ripple.newSound('boop.ogg', {
+  bpm = 180,
+  length = '1b',
+  tags = {testTagA, testTagB},
+})
+
+function testSound.onEnd()
+  testSound:play()
+end
+
+function love.update(dt)
+  testSound:update(dt)
+end
 
 function love.keypressed(key)
   if key == 'p' then testSound:play() end

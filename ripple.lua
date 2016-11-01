@@ -1,6 +1,6 @@
 local Instance = {}
 
-function Instance:_update()
+function Instance:_updateVolumes()
   self._source:setVolume(self._volume * self._sound:_getFinalVolume())
 end
 
@@ -12,7 +12,7 @@ local function newInstance(sound, options)
     _volume = options.volume or 1,
   }
   setmetatable(instance, {__index = Instance})
-  instance:_update()
+  instance:_updateVolumes()
   instance._source:setPitch(options.pitch or 1)
   instance._source:play()
   return instance
@@ -21,9 +21,31 @@ end
 
 local Sound = {}
 
+function Sound:_parseTime(value)
+  local time, units = value:match '(.*)([sbm])'
+  time = tonumber(time)
+  if units == 's' then
+    return time
+  elseif units == 'b' then
+    assert(self._bpm, 'Must set bpm of sound if specifying times in beats or measures')
+    return 60/self._bpm * time
+  elseif units == 'm' then
+    assert(self._bpm, 'Must set bpm of sound if specifying times in beats or measures')
+    return 60/self._bpm * time * 4
+  end
+end
+
+function Sound:_getLength()
+  if self._length then
+    return self:_parseTime(self._length)
+  else
+    return self._source:getDuration()
+  end
+end
+
 function Sound:_setVolume(volume)
   self._volume = volume
-  self:_update()
+  self:_updateVolumes()
 end
 
 function Sound:_getFinalVolume()
@@ -34,9 +56,9 @@ function Sound:_getFinalVolume()
   return v
 end
 
-function Sound:_update()
+function Sound:_updateVolumes()
   for i = 1, #self._instances do
-    self._instances[i]:_update()
+    self._instances[i]:_updateVolumes()
   end
 end
 
@@ -53,10 +75,24 @@ function Sound:_tag(tag)
   tag:_addSound(self)
 end
 
+function Sound.onEnd() end
+
 function Sound:play(options)
   self:_clean()
   local instance = newInstance(self, options)
   table.insert(self._instances, instance)
+  self._time = 0
+  self._playing = true
+end
+
+function Sound:update(dt)
+  if self._playing then
+    self._time = self._time + dt
+    if self._time >= self:_getLength() then
+      self._playing = false
+      self.onEnd()
+    end
+  end
 end
 
 function Sound:stop()
@@ -66,12 +102,18 @@ function Sound:stop()
   self:_clean()
 end
 
-local function newSound(filename, tags)
+local function newSound(filename, options)
+  options = options or {}
+  options.tags = options.tags or {}
   local sound = {
     _source = love.audio.newSource(filename),
     _tags = {},
+    _bpm = options.bpm,
+    _length = options.length,
     _volume = 1,
     _instances = {},
+    _playing = false,
+    _time = 0,
   }
   setmetatable(sound, {
     __index = function(self, k)
@@ -91,7 +133,9 @@ local function newSound(filename, tags)
       end
     end,
   })
-  for i = 1, #tags do sound:_tag(tags[i]) end
+  for i = 1, #options.tags do
+    sound:_tag(options.tags[i])
+  end
   return sound
 end
 
@@ -104,11 +148,11 @@ end
 
 function Tag:_setVolume(volume)
   self._volume = volume
-  self:_update()
+  self:_updateVolumes()
 end
 
-function Tag:_update()
-  for i = 1, #self._sounds do self._sounds[i]:_update() end
+function Tag:_updateVolumes()
+  for i = 1, #self._sounds do self._sounds[i]:_updateVolumes() end
 end
 
 local function newTag()
