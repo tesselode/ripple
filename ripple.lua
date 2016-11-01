@@ -33,13 +33,15 @@ function Sound:_setVolume(volume)
 end
 
 function Sound:_getFinalVolume()
-  return self._volume
+  local v = self._volume
+  for i = 1, #self._tags do
+    v = v * self._tags[i]:_getVolume()
+  end
+  return v
 end
 
 function Sound:_update()
-  for i = 1, #self._instances do
-    self._instances[i]:_update()
-  end
+  for i = 1, #self._instances do self._instances[i]:_update() end
 end
 
 function Sound:_clean()
@@ -50,6 +52,11 @@ function Sound:_clean()
   end
 end
 
+function Sound:_tag(tag)
+  table.insert(self._tags, tag)
+  tag:_addSound(self)
+end
+
 function Sound:play(options)
   self:_clean()
   local instance = newInstance(self, options)
@@ -57,24 +64,51 @@ function Sound:play(options)
 end
 
 function Sound:stop()
-  for i = 1, #self._instances do
-    self._instances[i]:_stop()
-  end
+  for i = 1, #self._instances do self._instances[i]:_stop() end
   self:_clean()
 end
 
 local function newSound(filename, tags)
   local sound = {
     _source = love.audio.newSource(filename),
-    _tags = tags or {},
+    _tags = {},
     _volume = 1,
     _instances = {},
   }
   setmetatable(sound, {__index = Sound})
+  for i = 1, #tags do sound:_tag(tags[i]) end
   return sound
+end
+
+
+local Tag = {}
+
+function Tag:_addSound(sound)
+  table.insert(self._sounds, sound)
+end
+
+function Tag:_getVolume() return self._volume end
+
+function Tag:_setVolume(volume)
+  self._volume = volume
+  self:_update()
+end
+
+function Tag:_update()
+  for i = 1, #self._sounds do self._sounds[i]:_update() end
+end
+
+local function newTag()
+  local tag = {
+    _volume = 1,
+    _sounds = {},
+  }
+  setmetatable(tag, {__index = Tag})
+  return tag
 end
 
 
 return {
   newSound = newSound,
+  newTag = newTag,
 }
