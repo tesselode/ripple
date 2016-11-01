@@ -1,6 +1,6 @@
 Ripple
 ------
-**Ripple** is an audio library for LÖVE that handles a variety of cases for music and sound effects.
+**Ripple** is an audio library for LÖVE that makes it easier to use sound effects and music. It has features for tags and executing code in time with music.
 
 Installation
 ============
@@ -22,7 +22,7 @@ sound = ripple.newSound(filename, options)
 ```
 - `filename` is the path to the sound.
 - `options` is a table containing any of the following properties:
-  - `bpm` - the BPM of the sound (mostly applicable if you're using the sound as music)
+  - `bpm` - the beats per minute of the sound (mostly applicable if you're using the sound as music)
   - `length` - the length of the sound (mostly applicable if you're using the sound as music)
   - `tag` - a table containing a list of tags to tag the sound with
 
@@ -62,7 +62,7 @@ Both `options.length` and intervals use a string with the following format to sp
 - `unit` is the unit of time. The possible units are:
   - `'s'` - seconds
   - `'b'` - beats
-  - `'m'` - measures
+  - `'m'` - measures (assuming 4 beats per measure)
 
 Note that to use beats or measures for your times, you must specify `options.bpm` in `ripple.newSound`.
 
@@ -77,7 +77,7 @@ sound:tag(tag)
 ```
 where `tag` is the tag to assign to the sound. You can also remove tags using `sound:untag(tag)`.
 
-To get the volume of a tag, use `tag:getVolume()`, and to set the volume of a tag, use `tag:setVolume(volume)` (where volume is a number from 0-1).
+To get the volume of a tag, use `tag:getVolume()`, and to set the volume of a tag, use `tag:setVolume(volume)` (where volume is a number from 0-1, 0 representing 0%, and 1 representing 100%).
 
 Note that the functions `tag`, `untag`, `getVolume`, and `setVolume` are all available to both sounds and tags. This means that you can get and set the volume of individual sounds, and you can tag and untag tags themselves, creating a hierarchy of tags.
 
@@ -89,11 +89,11 @@ sound.volume.v = .5
 print(sound.volume.v) -- prints .5
 print(sound.volume.value) -- also prints .5
 ```
-This is pretty janky because of how it's implemented, but it shouldn't cause any problems, and it's useful for tweening volumes for things like crossfading music.
+This is useful for tweening volumes for situations such as crossfading music.
 
 Contributing
 ============
-Send pull requests! Pull requests are cool!
+This library is in early development, so feel free to open issues or create pull requests in regards to either design or implementation.
 
 License
 =======
