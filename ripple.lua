@@ -75,7 +75,24 @@ local function newSound(filename, tags)
     _volume = 1,
     _instances = {},
   }
-  setmetatable(sound, {__index = Sound})
+  setmetatable(sound, {
+    __index = function(self, k)
+      if k == 'volume' then
+        return self:_getVolume()
+      elseif Sound[k] then
+        return Sound[k]
+      else
+        return rawget(self, k)
+      end
+    end,
+    __newindex = function(self, k, v)
+      if k == 'volume' then
+        self:_setVolume(v)
+      else
+        rawset(self, k, v)
+      end
+    end,
+  })
   for i = 1, #tags do sound:_tag(tags[i]) end
   return sound
 end
@@ -103,7 +120,24 @@ local function newTag()
     _volume = 1,
     _sounds = {},
   }
-  setmetatable(tag, {__index = Tag})
+  setmetatable(tag, {
+    __index = function(self, k)
+      if k == 'volume' then
+        return self:_getVolume()
+      elseif Tag[k] then
+        return Tag[k]
+      else
+        return rawget(self, k)
+      end
+    end,
+    __newindex = function(self, k, v)
+      if k == 'volume' then
+        self:_setVolume(v)
+      else
+        rawset(self, k, v)
+      end
+    end,
+  })
   return tag
 end
 
