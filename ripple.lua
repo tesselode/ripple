@@ -1,25 +1,136 @@
-local Instance = {}
+local ripple = {
+  _VERSION = 'Ripple',
+  _DESCRIPTION = 'Audio library for LÖVE',
+  _URL = 'https://github.com/tesselode/ripple',
+  _LICENSE = [[
+    MIT License
 
-function Instance:_updateVolumes()
-  self._source:setVolume(self._volume * self._sound:_getFinalVolume())
+    Copyright (c) 2016 Andrew Minnich
+
+    Permission is hereby granted, free of charge, to any person obtaining a copy
+    of this software and associated documentation files (the "Software"), to deal
+    in the Software without restriction, including without limitation the rights
+    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+    copies of the Software, and to permit persons to whom the Software is
+    furnished to do so, subject to the following conditions:
+
+    The above copyright notice and this permission notice shall be included in all
+    copies or substantial portions of the Software.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+    SOFTWARE.
+  ]]
+}
+
+
+local function removeByValue(t, v)
+  for i = #t, 1, -1 do
+    if t[i] == v then
+      table.remove(t, i)
+    end
+  end
+end
+
+local function removeByFilter(t, f)
+  for i = #t, 1, -1 do
+    if f(t[i]) then
+      table.remove(t, i)
+    end
+  end
+end
+
+
+local Tag = {}
+
+function Tag:_addChild(child)
+  table.insert(self._children, child)
+end
+
+function Tag:_removeChild(child)
+  removeByValue(self._children, child)
+end
+
+function Tag:_updateVolume()
+  for i = 1, #self._children do
+    self._children[i]:_updateVolume()
+  end
+end
+
+function Tag:_getFinalVolume()
+  local v = self._volume
+  for i = 1, #self._parents do
+    v = v * self._parents[i]:_getFinalVolume()
+  end
+  return v
+end
+
+function Tag:getVolume()
+  return self._volume
+end
+
+function Tag:setVolume(volume)
+  self._volume = volume
+  self:_updateVolume()
+end
+
+function Tag:tag(tag)
+  table.insert(self._parents, tag)
+  tag:_addChild(self)
+  self:_updateVolume()
+end
+
+function Tag:untag(tag)
+  removeByValue(self._parents, tag)
+  tag:_removeChild(self)
+  self:_updateVolume()
+end
+
+local function newTag()
+  local tag = setmetatable({
+    _children = {},
+    _parents = {},
+    _volume = 1,
+  }, {__index = Tag})
+  tag.volume = setmetatable({}, {
+    __index = function(t, k) return tag:getVolume() end,
+    __newindex = function(t, k, v) tag:setVolume(v) end,
+  })
+  return tag
+end
+
+
+local Instance = setmetatable({}, {__index = Tag})
+
+function Instance:_updateVolume()
+  self._source:setVolume(self:_getFinalVolume())
+end
+
+function Instance:_stop()
+  self._source:stop()
 end
 
 local function newInstance(sound, options)
   options = options or {}
-  local instance = {
-    _sound = sound,
-    _source = sound._source:clone(),
+  local instance = setmetatable({
+    _children = {},
+    _parents = {},
     _volume = options.volume or 1,
-  }
-  setmetatable(instance, {__index = Instance})
-  instance:_updateVolumes()
+    _source = sound._source:clone(),
+  }, {__index = Instance})
+  instance:tag(sound)
+  instance:_updateVolume()
   instance._source:setPitch(options.pitch or 1)
   instance._source:play()
   return instance
 end
 
 
-local Sound = {}
+local Sound = setmetatable({}, {__index = Tag})
 
 function Sound:_parseTime(value)
   local time, units = value:match '(.*)([sbm])'
@@ -27,10 +138,10 @@ function Sound:_parseTime(value)
   if units == 's' then
     return time
   elseif units == 'b' then
-    assert(self._bpm, 'Must set bpm of sound if specifying times in beats or measures')
+    assert(self._bpm, 'Must set the BPM to use beats and measures as units')
     return 60/self._bpm * time
   elseif units == 'm' then
-    assert(self._bpm, 'Must set bpm of sound if specifying times in beats or measures')
+    assert(self._bpm, 'Must set the BPM to use beats and measures as units')
     return 60/self._bpm * time * 4
   end
 end
@@ -43,36 +154,10 @@ function Sound:_getLength()
   end
 end
 
-function Sound:_setVolume(volume)
-  self._volume = volume
-  self:_updateVolumes()
-end
-
-function Sound:_getFinalVolume()
-  local v = self._volume
-  for i = 1, #self._tags do
-    v = v * self._tags[i]._volume
-  end
-  return v
-end
-
-function Sound:_updateVolumes()
-  for i = 1, #self._instances do
-    self._instances[i]:_updateVolumes()
-  end
-end
-
 function Sound:_clean()
-  for i = #self._instances, 1, -1 do
-    if not self._instances[i]._source:isPlaying() then
-      table.remove(self._instances, i)
-    end
-  end
-end
-
-function Sound:_tag(tag)
-  table.insert(self._tags, tag)
-  tag:_addSound(self)
+  removeByFilter(self._children, function(instance)
+    return not instance._source:isPlaying()
+  end)
 end
 
 function Sound.onEnd() end
@@ -80,9 +165,8 @@ function Sound.onEnd() end
 function Sound:play(options)
   self:_clean()
   local instance = newInstance(self, options)
-  table.insert(self._instances, instance)
-  self._time = 0
   self._playing = true
+  self._time = 0
   for interval, f in pairs(self.every) do
     self._timers[interval] = self:_parseTime(interval)
   end
@@ -107,8 +191,8 @@ function Sound:update(dt)
 end
 
 function Sound:stop()
-  for i = 1, #self._instances do
-    self._instances[i]._source:stop()
+  for i = 1, #self._children do
+    self._children[i]:_stop()
   end
   self._playing = false
   self:_clean()
@@ -117,87 +201,29 @@ end
 local function newSound(filename, options)
   options = options or {}
   options.tags = options.tags or {}
-  local sound = {
+  local sound = setmetatable({
+    _children = {},
+    _parents = {},
+    _volume = 1,
     _source = love.audio.newSource(filename),
-    _tags = {},
     _bpm = options.bpm,
     _length = options.length,
-    _volume = 1,
-    _instances = {},
     _playing = false,
     _time = 0,
-    _timers = {},
     every = {},
-  }
-  setmetatable(sound, {
-    __index = function(self, k)
-      if k == 'volume' then
-        return self._volume
-      elseif Sound[k] then
-        return Sound[k]
-      else
-        return rawget(self, k)
-      end
-    end,
-    __newindex = function(self, k, v)
-      if k == 'volume' then
-        self:_setVolume(v)
-      else
-        rawset(self, k, v)
-      end
-    end,
+    _timers = {},
+  }, {__index = Sound})
+  sound.volume = setmetatable({}, {
+    __index = function(t, k) return sound:getVolume() end,
+    __newindex = function(t, k, v) sound:setVolume(v) end,
   })
-  -- todo: add an assert to make sure the tags actually exist
   for i = 1, #options.tags do
-    sound:_tag(options.tags[i])
+    sound:tag(options.tags[i])
   end
   return sound
 end
 
 
-local Tag = {}
-
-function Tag:_addSound(sound)
-  table.insert(self._sounds, sound)
-end
-
-function Tag:_setVolume(volume)
-  self._volume = volume
-  self:_updateVolumes()
-end
-
-function Tag:_updateVolumes()
-  for i = 1, #self._sounds do self._sounds[i]:_updateVolumes() end
-end
-
-local function newTag()
-  local tag = {
-    _volume = 1,
-    _sounds = {},
-  }
-  setmetatable(tag, {
-    __index = function(self, k)
-      if k == 'volume' then
-        return self._volume
-      elseif Tag[k] then
-        return Tag[k]
-      else
-        return rawget(self, k)
-      end
-    end,
-    __newindex = function(self, k, v)
-      if k == 'volume' then
-        self:_setVolume(v)
-      else
-        rawset(self, k, v)
-      end
-    end,
-  })
-  return tag
-end
-
-
-return {
-  newSound = newSound,
-  newTag = newTag,
-}
+ripple.newTag = newTag
+ripple.newSound = newSound
+return ripple

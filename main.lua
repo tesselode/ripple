@@ -1,31 +1,31 @@
 local ripple = require 'ripple'
 
-intro = ripple.newSound('intro.ogg', {
-  bpm = 95,
-  length = '2b',
-})
-intro.onEnd = function() loop:play() end
+testTag = ripple.newTag()
 
-loop = ripple.newSound('loop.ogg', {
+local testSound = ripple.newSound('loop.ogg', {
   bpm = 95,
   length = '2m',
+  tags = {testTag},
 })
-loop.onEnd = function() loop:play() end
-loop.every['.5b'] = function() print '\t\teigth' end
-loop.every['1b'] = function() print '\tbeat' end
-loop.every['1m'] = function() print 'measure' end
+testSound.onEnd = function() testSound:play() end
+testSound.every['.5b'] = function() print '\t\teigth' end
+testSound.every['1b'] = function() print '\tbeat' end
+testSound.every['1m'] = function() print 'measure' end
 
 function love.update(dt)
-  intro:update(dt)
-  loop:update(dt)
+  testSound:update(dt)
 end
 
 function love.keypressed(key)
-  if key == 'p' then intro:play() end
-  if key == 's' then
-    intro:stop()
-    loop:stop()
+  if key == 'p' then testSound:play() end
+  if key == 's' then testSound:stop() end
+  if key == '5' then
+    testTag.volume.v = .5
   end
 
   if key == 'escape' then love.event.quit() end
+end
+
+function love.draw()
+  love.graphics.print(#testSound._children..'\n'..testSound:_getFinalVolume())
 end
