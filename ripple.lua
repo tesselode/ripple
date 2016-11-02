@@ -205,7 +205,7 @@ local function newSound(filename, options)
     _children = {},
     _parents = {},
     _volume = 1,
-    _source = love.audio.newSource(filename),
+    _source = love.audio.newSource(filename, 'static'),
     _bpm = options.bpm,
     _length = options.length,
     _playing = false,
