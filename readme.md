@@ -25,6 +25,7 @@ sound = ripple.newSound(filename, options)
   - `bpm` - the beats per minute of the sound (mostly applicable if you're using the sound as music)
   - `length` - the length of the sound (mostly applicable if you're using the sound as music)
   - `tag` - a table containing a list of tags to tag the sound with
+  - `mode` - can be either `'static'` or `'stream'`, and defaults to '`static`'. `'static'` means that the entire sound will be loaded at once, while `'stream'` means that the sound will be loaded on the fly. Streaming sources take less memory, but there can be a slight delay when playing them, so using the static mode is recommended for cases where two sounds need to play at the exact same time (i.e. music with multiple layers).
 
 To play a sound, use `sound:play`:
 ```lua
