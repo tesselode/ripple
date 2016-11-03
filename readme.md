@@ -1,6 +1,45 @@
 Ripple
 ------
-**Ripple** is an audio library for LÖVE that makes it easier to use sound effects and music. It has features for tags and executing code in time with music.
+**Ripple** is an audio library for LÖVE. It handles a variety of situations for sound effects and music, and it has support for tags and calling function in time with music.
+
+```lua
+ripple = require 'ripple'
+
+tags = {
+  sfx = ripple.newTag(),
+  music = ripple.newTag(),
+  master = ripple.newTag(),
+}
+
+sounds = {
+  shoot = ripple.newSound('shoot.ogg', {
+    tags = {tags.sfx, tags.master},
+  }),
+}
+
+music = {
+  gameplay = ripple.newSound('gameplay.ogg', {
+    bpm = 130,
+    length = '32m',
+    loop = true,
+    tags = {tags.music, tags.master},
+  })
+}
+music.gameplay.every['1b'] = function() background:flashOnBeat() end
+
+tags.master:setVolume(.8)
+music.gameplay:play()
+
+function player:shoot()
+  sounds.shoot:play {pitch = .5*love.math.random() + .5}
+end
+
+function love.update(dt)
+  for _, m in pairs(music) do
+    m:update(dt)
+  end
+end
+```
 
 Installation
 ============
@@ -46,6 +85,7 @@ Ripple provides two ways of timing actions with sounds, `onEnd` and `every`.
 To call code at the end of a sound, overwrite the function `sound.onEnd`. For example, this code will cause a sound to loop:
 ```lua
 sound.onEnd = function() sound:play() end
+-- this is just an example, using the loop option in ripple.newSound would be easier
 ```
 You can specify when the "end" of a sound is by setting the `length` option in `ripple.newSound`.
 
@@ -79,7 +119,15 @@ sound:tag(tag)
 ```
 where `tag` is the tag to assign to the sound. You can also remove tags using `sound:untag(tag)`.
 
-To get the volume of a tag, use `tag:getVolume()`, and to set the volume of a tag, use `tag:setVolume(volume)` (where volume is a number from 0-1, 0 representing 0%, and 1 representing 100%).
+To get the volume of a tag, use 
+```
+tag:getVolume()
+```
+and to set the volume of a tag, use
+```
+tag:setVolume(volume)
+```
+(where volume is a number from 0-1, 0 representing 0%, and 1 representing 100%).
 
 Note that the functions `tag`, `untag`, `getVolume`, and `setVolume` are all available to both sounds and tags. This means that you can get and set the volume of individual sounds, and you can tag and untag tags themselves, creating a hierarchy of tags.
 
