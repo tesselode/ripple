@@ -28,21 +28,18 @@ local sounds = {
   loopMain = ripple.newSound('loop main.ogg', {
     bpm = 95,
     length = '4m',
+    loop = true,
     tags = {tags.main, tags.master},
   }),
   loopAux = ripple.newSound('loop aux.ogg', {
     bpm = 95,
     length = '4m',
+    loop = true,
     tags = {tags.aux, tags.master},
   }),
 }
 -- start loop after intro
 sounds.introMain.onEnd = function()
-  sounds.loopMain:play()
-  sounds.loopAux:play()
-end
--- looping behavior
-sounds.loopMain.onEnd = function()
   sounds.loopMain:play()
   sounds.loopAux:play()
 end

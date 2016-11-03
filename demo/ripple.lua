@@ -186,6 +186,9 @@ function Sound:update(dt)
     if self._time >= self:_getLength() then
       self._playing = false
       self.onEnd()
+      if self._loop then
+        self:play()
+      end
     end
   end
 end
@@ -208,6 +211,7 @@ local function newSound(filename, options)
     _source = love.audio.newSource(filename, options.mode or 'static'),
     _bpm = options.bpm,
     _length = options.length,
+    _loop = options.loop or false,
     _playing = false,
     _time = 0,
     every = {},
