@@ -79,6 +79,12 @@ Note that `sound:play` creates a new instance of the sound each time, so multipl
 
 To stop a sound, just call `sound:stop()`.
 
+To update a sound, call
+```lua
+sound:update(dt)
+```
+where `dt` is the time between frames (you'll probably want to use the `dt` argument from `love.update`). You don't *have* to call `update` on every sound, but the `loop` option as well as `onEnd` and `every` functions (see below) only work if the sound is updated every frame.
+
 ### Timing actions with music
 Ripple provides two ways of timing actions with sounds, `onEnd` and `every`.
 
