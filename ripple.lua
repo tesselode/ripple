@@ -1,6 +1,4 @@
 local love = _G.love
--- luacheck: ignore dump
-local dump = require "libs/dumper"
 local ripple = {
   _VERSION = 'Ripple',
   _DESCRIPTION = 'Audio library for LÖVE',
@@ -116,8 +114,6 @@ local function sourceFunc(self,k)
 	end
 	if k == '_source' then
 		-- print("Error in sourceFunc")
-		dump(k)
-		dump(self, 'self', true)
 		return nil
 	end
 	local source = self._source
