@@ -1,3 +1,6 @@
+local love = _G.love
+-- luacheck: ignore dump
+local dump = require "libs/dumper"
 local ripple = {
   _VERSION = 'Ripple',
   _DESCRIPTION = 'Audio library for LÖVE',
@@ -78,6 +81,10 @@ function Tag:setVolume(volume)
   self:_updateVolume()
 end
 
+function Tag:isPlaying()
+	return self._playing
+end
+
 function Tag:tag(tag)
   table.insert(self._parents, tag)
   tag:_addChild(self)
@@ -97,14 +104,35 @@ local function newTag()
     _volume = 1,
   }, {__index = Tag})
   tag.volume = setmetatable({}, {
-    __index = function(t, k) return tag:getVolume() end,
-    __newindex = function(t, k, v) tag:setVolume(v) end,
+    __index = function() return tag:getVolume() end,
+    __newindex = function(_,_,v) tag:setVolume(v) end,
   })
   return tag
 end
 
+local function sourceFunc(self,k)
+	if Tag[k] then
+		return Tag[k]
+	end
+	if k == '_source' then
+		-- print("Error in sourceFunc")
+		dump(k)
+		dump(self, 'self', true)
+		return nil
+	end
+	local source = self._source
+	if source and type(source) == 'table' and source[k] then
+		if type(source[k]) == 'function' then
+			return function(_, ...)
+				return source[k](source, ...)
+			end
+		end
+		return source[k]
+	end
+end
 
-local Instance = setmetatable({}, {__index = Tag})
+
+local Instance = setmetatable({}, {__index = sourceFunc})
 
 function Instance:_updateVolume()
   self._source:setVolume(self:_getFinalVolume())
@@ -129,8 +157,30 @@ local function newInstance(sound, options)
   return instance
 end
 
+local function childFunc(self, k)
+	if Tag[k] then
+		return Tag[k]
+	end
+	if k == '_children' then
+		return sourceFunc
+	end
+	local children = self._children
+	if children and type(children) == 'table' then
+		return function(_, ...)
+			local results = {}
+			for i=1, #children do
+				if type(children[i]) == 'function' then
+					table.insert(results, children[k](children, ...))
+				end
+			end
+			return results
+		end
+	elseif type(children) == 'function' then
+		return children(self, k)
+	end
+end
 
-local Sound = setmetatable({}, {__index = Tag})
+local Sound = setmetatable({}, {__index = childFunc})
 
 function Sound:_parseTime(value)
   local time, units = value:match '(.*)([sbm])'
@@ -164,10 +214,10 @@ function Sound.onEnd() end
 
 function Sound:play(options)
   self:_clean()
-  local instance = newInstance(self, options)
+	local instance = newInstance(self, options) -- luacheck: ignore instance
   self._playing = true
   self._time = 0
-  for interval, f in pairs(self.every) do
+  for interval in pairs(self.every) do
     self._timers[interval] = self:_parseTime(interval)
   end
 end
@@ -204,11 +254,12 @@ end
 local function newSound(filename, options)
   options = options or {}
   options.tags = options.tags or {}
+	local source = love.audio.newSource(filename, options.mode or 'static')
   local sound = setmetatable({
     _children = {},
     _parents = {},
     _volume = 1,
-    _source = love.audio.newSource(filename, options.mode or 'static'),
+    _source = source,
     _bpm = options.bpm,
     _length = options.length,
     _loop = options.loop or false,
@@ -216,10 +267,20 @@ local function newSound(filename, options)
     _time = 0,
     every = {},
     _timers = {},
-  }, {__index = Sound})
+  }, {__index = function(_,k)
+		if Sound[k] then
+			return Sound[k]
+		end
+		if type(source[k]) == 'function' then
+			return function (_, ...)
+				return source[k](source, ...)
+			end
+		end
+		return source[k]
+	end})
   sound.volume = setmetatable({}, {
-    __index = function(t, k) return sound:getVolume() end,
-    __newindex = function(t, k, v) sound:setVolume(v) end,
+    __index = function() return sound:getVolume() end,
+    __newindex = function(_, _, v) sound:setVolume(v) end,
   })
   for i = 1, #options.tags do
     sound:tag(options.tags[i])
