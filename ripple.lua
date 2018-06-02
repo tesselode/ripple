@@ -51,6 +51,8 @@ local Sound = {}
 function Sound:__index(k)
 	if k == 'volume' then
 		return self:getVolume()
+	elseif k == 'tags' then
+		return self:getTags()
 	elseif rawget(self, k) then
 		return rawget(self, k)
 	else
@@ -61,6 +63,8 @@ end
 function Sound:__newindex(k, v)
 	if k == 'volume' then
 		self:setVolume(v)
+	elseif k == 'tags' then
+		self:setTags(v)
 	else
 		rawset(self, k, v)
 	end
@@ -105,6 +109,23 @@ function Sound:untag(tag)
 	self:_updateVolume()
 end
 
+function Sound:getTags()
+	local tags = {}
+	for tag, _ in pairs(self._tags) do
+		table.insert(tags, tag)
+	end
+	return tags
+end
+
+function Sound:setTags(tags)
+	for tag, _ in pairs(self._tags) do
+		self:untag(tag)
+	end
+	for _, tag in ipairs(tags) do
+		self:tag(tag)
+	end
+end
+
 function Sound:play(options)
 	options = options or {}
 	self:_removeInstances()
@@ -125,6 +146,7 @@ function ripple.newSound(options)
 		_tags = {},
 		_instances = {},
 	}, Sound)
+	sound:setTags(options.tags or {})
 	return sound
 end
 

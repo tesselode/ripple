@@ -5,8 +5,8 @@ local sfx = ripple.newTag()
 
 local testSound = ripple.newSound {
 	source = love.audio.newSource('cowbell.ogg', 'static'),
+	tags = {sfx},
 }
-testSound:tag(sfx)
 
 function love.keypressed(key)
 	if key == 'space' then
@@ -16,7 +16,7 @@ function love.keypressed(key)
 		}
 	end
 	if key == 'return' then
-		testSound:tag(master)
+		testSound.tags = {master, sfx}
 	end
 	if key == 'left' then
 		master.volume = master.volume * .5
@@ -35,4 +35,5 @@ end
 function love.draw()
 	love.graphics.print(master.volume)
 	love.graphics.print(sfx.volume, 0, 16)
+	love.graphics.print(#testSound.tags, 0, 32)
 end
