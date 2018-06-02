@@ -71,15 +71,15 @@ function Sound:_updateVolume()
 	for tag, _ in pairs(self._tags) do
 		self._finalVolume = self._finalVolume * tag:getVolume()
 	end
-	for _, instance in ipairs(self._instances) do
+	for instance, _ in pairs(self._instances) do
 		instance.source:setVolume(self._finalVolume * instance.volume)
 	end
 end
 
 function Sound:_removeInstances()
-	for i = #self._instances, 1, -1 do
-		if not self._instances[i].source:isPlaying() then
-			table.remove(self._instances, i)
+	for instance, _ in pairs(self._instances) do
+		if not instance.source:isPlaying() then
+			self._instances[instance] = nil
 		end
 	end
 end
@@ -115,7 +115,7 @@ function Sound:play(options)
 	instance.source:setVolume(self._finalVolume * instance.volume)
 	instance.source:setPitch(options.pitch or 1)
 	instance.source:play()
-	table.insert(self._instances, instance)
+	self._instances[instance] = true
 end
 
 function ripple.newSound(options)
