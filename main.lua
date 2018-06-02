@@ -19,20 +19,20 @@ function love.keypressed(key)
 		testSound:tag(master)
 	end
 	if key == 'left' then
-		master:setVolume(master:getVolume() * .5)
+		master.volume = master.volume * .5
 	end
 	if key == 'right' then
-		master:setVolume(master:getVolume() * 2)
+		master.volume = master.volume * 2
 	end
 	if key == 'down' then
-		sfx:setVolume(sfx:getVolume() * .5)
+		sfx.volume = sfx.volume * .5
 	end
 	if key == 'up' then
-		sfx:setVolume(sfx:getVolume() * 2)
+		sfx.volume = sfx.volume * 2
 	end
 end
 
 function love.draw()
-	love.graphics.print(master:getVolume())
-	love.graphics.print(sfx:getVolume(), 0, 16)
+	love.graphics.print(master.volume)
+	love.graphics.print(sfx.volume, 0, 16)
 end

@@ -1,7 +1,24 @@
 local ripple = {}
 
 local Tag = {}
-Tag.__index = Tag
+
+function Tag:__index(k)
+	if k == 'volume' then
+		return self:getVolume()
+	elseif rawget(self, k) then
+		return rawget(self, k)
+	else
+		return Tag[k]
+	end
+end
+
+function Tag:__newindex(k, v)
+	if k == 'volume' then
+		self:setVolume(v)
+	else
+		rawset(self, k, v)
+	end
+end
 
 function Tag:_addSound(sound)
 	self._sounds[sound] = true
@@ -30,7 +47,24 @@ function ripple.newTag()
 end
 
 local Sound = {}
-Sound.__index = Sound
+
+function Sound:__index(k)
+	if k == 'volume' then
+		return self:getVolume()
+	elseif rawget(self, k) then
+		return rawget(self, k)
+	else
+		return Sound[k]
+	end
+end
+
+function Sound:__newindex(k, v)
+	if k == 'volume' then
+		self:setVolume(v)
+	else
+		rawset(self, k, v)
+	end
+end
 
 function Sound:_updateVolume()
 	self._finalVolume = self._volume
