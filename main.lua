@@ -9,3 +9,7 @@ function love.keypressed(key)
 		testSound:play()
 	end
 end
+
+function love.draw()
+	love.graphics.print(#testSound.instances)
+end
