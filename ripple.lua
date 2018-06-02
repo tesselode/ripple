@@ -4,28 +4,28 @@ local Tag = {}
 Tag.__index = Tag
 
 function Tag:_addSound(sound)
-	self.sounds[sound] = true
+	self._sounds[sound] = true
 end
 
 function Tag:_removeSound(sound)
-	self.sounds[sound] = nil
+	self._sounds[sound] = nil
 end
 
 function Tag:getVolume()
-	return self.volume
+	return self._volume
 end
 
 function Tag:setVolume(volume)
-	self.volume = volume
-	for sound, _ in pairs(self.sounds) do
+	self._volume = volume
+	for sound, _ in pairs(self._sounds) do
 		sound:_updateVolume()
 	end
 end
 
 function ripple.newTag()
 	return setmetatable({
-		volume = 1,
-		sounds = {},
+		_volume = 1,
+		_sounds = {},
 	}, Tag)
 end
 
@@ -33,40 +33,40 @@ local Sound = {}
 Sound.__index = Sound
 
 function Sound:_updateVolume()
-	self._finalVolume = self.volume
-	for tag, _ in pairs(self.tags) do
+	self._finalVolume = self._volume
+	for tag, _ in pairs(self._tags) do
 		self._finalVolume = self._finalVolume * tag:getVolume()
 	end
-	for _, instance in ipairs(self.instances) do
+	for _, instance in ipairs(self._instances) do
 		instance.source:setVolume(self._finalVolume * instance.volume)
 	end
 end
 
 function Sound:_removeInstances()
-	for i = #self.instances, 1, -1 do
-		if not self.instances[i].source:isPlaying() then
-			table.remove(self.instances, i)
+	for i = #self._instances, 1, -1 do
+		if not self._instances[i].source:isPlaying() then
+			table.remove(self._instances, i)
 		end
 	end
 end
 
 function Sound:getVolume()
-	return self.volume
+	return self._volume
 end
 
 function Sound:setVolume(volume)
-	self.volume = volume
+	self._volume = volume
 	self:_updateVolume()
 end
 
 function Sound:tag(tag)
-	self.tags[tag] = true
+	self._tags[tag] = true
 	tag:_addSound(self)
 	self:_updateVolume()
 end
 
 function Sound:untag(tag)
-	self.tags[tag] = nil
+	self._tags[tag] = nil
 	tag:_removeSound(self)
 	self:_updateVolume()
 end
@@ -81,15 +81,15 @@ function Sound:play(options)
 	instance.source:setVolume(self._finalVolume * instance.volume)
 	instance.source:setPitch(options.pitch or 1)
 	instance.source:play()
-	table.insert(self.instances, instance)
+	table.insert(self._instances, instance)
 end
 
 function ripple.newSound(options)
 	local sound = setmetatable({
 		source = options.source,
-		volume = options.volume or 1,
-		tags = {},
-		instances = {},
+		_volume = options.volume or 1,
+		_tags = {},
+		_instances = {},
 	}, Sound)
 	return sound
 end
