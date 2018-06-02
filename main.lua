@@ -6,7 +6,10 @@ local testSound = ripple.newSound {
 
 function love.keypressed(key)
 	if key == 'space' then
-		testSound:play()
+		testSound:play {
+			volume = love.math.random(),
+			pitch = .5 + love.math.random(),
+		}
 	end
 	if key == 'down' then
 		testSound:setVolume(testSound:getVolume() * .5)

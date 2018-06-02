@@ -5,7 +5,7 @@ Sound.__index = Sound
 
 function Sound:_removeInstances()
 	for i = #self.instances, 1, -1 do
-		if not self.instances[i]:isPlaying() then
+		if not self.instances[i].source:isPlaying() then
 			table.remove(self.instances, i)
 		end
 	end
@@ -18,23 +18,28 @@ end
 function Sound:setVolume(volume)
 	self.volume = volume
 	for _, instance in ipairs(self.instances) do
-		instance:setVolume(volume)
+		instance.source:setVolume(volume * instance.volume)
 	end
 end
 
-function Sound:play()
+function Sound:play(options)
+	options = options or {}
 	self:_removeInstances()
-	local instance = self.source:clone()
-	instance:setVolume(self.volume)
-	instance:play()
+	local instance = {
+		source = self.source:clone(),
+		volume = options.volume or 1,
+	}
+	instance.source:setVolume(self.volume * instance.volume)
+	instance.source:setPitch(options.pitch or 1)
+	instance.source:play()
 	table.insert(self.instances, instance)
 end
 
 function ripple.newSound(options)
 	local sound = setmetatable({
 		source = options.source,
+		volume = options.volume or 1,
 		instances = {},
-		volume = 1,
 	}, Sound)
 	return sound
 end
