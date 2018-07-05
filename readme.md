@@ -90,8 +90,7 @@ You can disable an effect by passing `false` as the second argument.
 You can also set effects on tags using `tag.setEffect`:
 
 ```lua
-tag:setEffect(name, filtersettings) -- applies an effect
-tag:setEffect(false) -- removes an effect
+tag:setEffect(name, filtersettings)
 ```
 
-Effects applied to a tag will override the effects already on individual sounds.
+Tag effects will be applied to every sound with that tag.

@@ -16,15 +16,24 @@ love.audio.setEffect('echo', {
 	feedback = .5,
 })
 
+local sfx = ripple.newTag()
+sfx:setEffect 'chorus'
+sfx:setEffect 'echo'
+sfx:setEffect 'reverb'
+
 local testSound = ripple.newSound {
 	source = love.audio.newSource('bloop.ogg', 'static'),
+	tags = {sfx},
 }
-testSound:setEffect 'chorus'
-testSound:setEffect 'echo'
-testSound:setEffect 'reverb'
+local testSound2 = ripple.newSound {
+	source = love.audio.newSource('bloop2.ogg', 'static'),
+}
 
 function love.keypressed(key)
 	if key == '1' then testSound:play() end
+	if key == '2' then testSound2:play() end
+
+	if key == 'return' then testSound2:tag(sfx) end
 end
 
 function love.draw()

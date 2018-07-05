@@ -18,15 +18,15 @@ end
 
 function Tag:_addSound(sound)
 	self._sounds[sound] = true
-	if self._effect then
-		sound:setEffect(self._effect.name, self._effect.filter)
+	for name, effect in pairs(self._effects) do
+		sound:setEffect(name, effect.filter)
 	end
 end
 
 function Tag:_removeSound(sound)
 	self._sounds[sound] = nil
-	if self._effect then
-		sound:setEffect(self._effect.name, false)
+	for name, _ in pairs(self._effects) do
+		sound:setEffect(name, false)
 	end
 end
 
@@ -42,16 +42,16 @@ function Tag:_setVolume(volume)
 end
 
 function Tag:setEffect(name, filter)
-	if name then
-		self._effect = {name = name, filter = filter}
+	if filter == false and self._effects[name] then
+		for sound, _ in pairs(self._sounds) do
+			sound:setEffect(name, false)
+		end
+		self._effects[name] = nil
+	else
+		self._effects[name] = {filter = filter}
 		for sound, _ in pairs(self._sounds) do
 			sound:setEffect(name, filter)
 		end
-	elseif self._effect then
-		for sound, _ in pairs(self._sounds) do
-			sound:setEffect(self._effect.name, false)
-		end
-		self._effect = false
 	end
 end
 
@@ -59,7 +59,7 @@ function ripple.newTag()
 	return setmetatable({
 		_volume = 1,
 		_sounds = {},
-		_effect = false,
+		_effects = {},
 	}, Tag)
 end
 
