@@ -118,6 +118,10 @@ function Sound:setTags(tags)
 	end
 end
 
+function Sound:setEffect(...)
+	self._source:setEffect(...)
+end
+
 function Sound:resume()
 	self:_removeInstances()
 	for _, instance in ipairs(self._instances) do
@@ -129,7 +133,7 @@ function Sound:play(options)
 	self:resume()
 	options = options or {}
 	local instance = {
-		source = self.source:clone(),
+		source = self._source:clone(),
 		volume = options.volume or 1,
 	}
 	instance.source:setVolume(self._finalVolume * instance.volume)
@@ -155,7 +159,7 @@ end
 
 function ripple.newSound(options)
 	local sound = setmetatable({
-		source = options.source,
+		_source = options.source,
 		_volume = options.volume or 1,
 		_tags = {},
 		_instances = {},
