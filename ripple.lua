@@ -3,14 +3,14 @@ local ripple = {}
 local Tag = {}
 
 function Tag:__index(k)
-	return k == 'volume' and self:getVolume()
+	return k == 'volume' and self:_getVolume()
 		or rawget(self, k)
 		or Tag[k]
 end
 
 function Tag:__newindex(k, v)
 	if k == 'volume' then
-		self:setVolume(v)
+		self:_setVolume(v)
 	else
 		rawset(self, k, v)
 	end
@@ -24,11 +24,11 @@ function Tag:_removeSound(sound)
 	self._sounds[sound] = nil
 end
 
-function Tag:getVolume()
+function Tag:_getVolume()
 	return self._volume
 end
 
-function Tag:setVolume(volume)
+function Tag:_setVolume(volume)
 	self._volume = volume
 	for sound, _ in pairs(self._sounds) do
 		sound:_updateVolume()
@@ -45,7 +45,7 @@ end
 local Sound = {}
 
 function Sound:__index(k)
-	return k == 'volume' and self:getVolume()
+	return k == 'volume' and self:_getVolume()
 		or k == 'tags' and self:getTags()
 		or rawget(self, k)
 		or Sound[k]
@@ -53,7 +53,7 @@ end
 
 function Sound:__newindex(k, v)
 	if k == 'volume' then
-		self:setVolume(v)
+		self:_setVolume(v)
 	elseif k == 'tags' then
 		self:setTags(v)
 	else
@@ -64,7 +64,7 @@ end
 function Sound:_updateVolume()
 	self._finalVolume = self._volume
 	for tag, _ in pairs(self._tags) do
-		self._finalVolume = self._finalVolume * tag:getVolume()
+		self._finalVolume = self._finalVolume * tag:_getVolume()
 	end
 	for instance, _ in pairs(self._instances) do
 		instance.source:setVolume(self._finalVolume * instance.volume)
@@ -79,11 +79,11 @@ function Sound:_removeInstances()
 	end
 end
 
-function Sound:getVolume()
+function Sound:_getVolume()
 	return self._volume
 end
 
-function Sound:setVolume(volume)
+function Sound:_setVolume(volume)
 	self._volume = volume
 	self:_updateVolume()
 end
