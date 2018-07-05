@@ -145,6 +145,7 @@ function ripple.newSound(options)
 		_instances = {},
 	}, Sound)
 	sound:setTags(options.tags or {})
+	sound:_updateVolume()
 	return sound
 end
 
