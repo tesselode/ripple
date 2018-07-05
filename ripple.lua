@@ -3,13 +3,9 @@ local ripple = {}
 local Tag = {}
 
 function Tag:__index(k)
-	if k == 'volume' then
-		return self:getVolume()
-	elseif rawget(self, k) then
-		return rawget(self, k)
-	else
-		return Tag[k]
-	end
+	return k == 'volume' and self:getVolume()
+		or rawget(self, k)
+		or Tag[k]
 end
 
 function Tag:__newindex(k, v)
@@ -49,15 +45,10 @@ end
 local Sound = {}
 
 function Sound:__index(k)
-	if k == 'volume' then
-		return self:getVolume()
-	elseif k == 'tags' then
-		return self:getTags()
-	elseif rawget(self, k) then
-		return rawget(self, k)
-	else
-		return Sound[k]
-	end
+	return k == 'volume' and self:getVolume()
+		or k == 'tags' and self:getTags()
+		or rawget(self, k)
+		or Sound[k]
 end
 
 function Sound:__newindex(k, v)
