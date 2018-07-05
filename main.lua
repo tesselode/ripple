@@ -14,6 +14,8 @@ function love.keypressed(key)
 	if key == 'return' then
 		testSound:stop()
 	end
+	if key == 'p' then testSound:pause() end
+	if key == 'r' then testSound:resume() end
 end
 
 function love.draw()

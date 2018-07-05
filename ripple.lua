@@ -73,7 +73,8 @@ end
 
 function Sound:_removeInstances()
 	for i = #self._instances, 1, -1 do
-		if not self._instances[i].source:isPlaying() then
+		local source = self._instances[i].source
+		if not source:isPlaying() and source:tell() == 0 then
 			table.remove(self._instances, i)
 		end
 	end
@@ -117,9 +118,16 @@ function Sound:setTags(tags)
 	end
 end
 
-function Sound:play(options)
-	options = options or {}
+function Sound:resume()
 	self:_removeInstances()
+	for _, instance in ipairs(self._instances) do
+		instance.source:play()
+	end
+end
+
+function Sound:play(options)
+	self:resume()
+	options = options or {}
 	local instance = {
 		source = self.source:clone(),
 		volume = options.volume or 1,
@@ -133,6 +141,13 @@ end
 function Sound:stop()
 	for _, instance in ipairs(self._instances) do
 		instance.source:stop()
+	end
+	self:_removeInstances()
+end
+
+function Sound:pause()
+	for _, instance in ipairs(self._instances) do
+		instance.source:pause()
 	end
 	self:_removeInstances()
 end
