@@ -15,15 +15,16 @@ local testSound = ripple.newSound {
 }
 local testSound2 = ripple.newSound {
 	source = love.audio.newSource('bloop2.ogg', 'static'),
-	tags = {},
+	tags = {sfx},
 }
 
 function love.keypressed(key)
 	if key == '1' then testSound:play() end
 	if key == '2' then testSound2:play() end
 
-	if key == 'return' then sfx:setEffect() end
-	if key == 'space' then testSound2:tag(sfx) end
+	if key == 'return' then
+		testSound:setLooping(not testSound:isLooping())
+	end
 end
 
 function love.draw()

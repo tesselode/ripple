@@ -139,6 +139,21 @@ function Sound:setTags(tags)
 	end
 end
 
+function Sound:isLooping()
+	return self._source:isLooping()
+end
+
+function Sound:setLooping(enabled)
+	if enabled then
+		self._source:setLooping(true)
+	else
+		self._source:setLooping(false)
+		for _, instance in ipairs(self._instances) do
+			instance.source:setLooping(false)
+		end
+	end
+end
+
 function Sound:setEffect(...)
 	self._source:setEffect(...)
 end
