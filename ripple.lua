@@ -130,6 +130,13 @@ function Sound:play(options)
 	table.insert(self._instances, instance)
 end
 
+function Sound:stop()
+	for _, instance in ipairs(self._instances) do
+		instance.source:stop()
+	end
+	self:_removeInstances()
+end
+
 function ripple.newSound(options)
 	local sound = setmetatable({
 		source = options.source,
