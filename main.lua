@@ -6,24 +6,24 @@ love.audio.setEffect('cavern', {
 	gain = .5,
 })
 
+local sfx = ripple.newTag()
+sfx:setEffect 'cavern'
+
 local testSound = ripple.newSound {
 	source = love.audio.newSource('bloop.ogg', 'static'),
+	tags = {sfx},
+}
+local testSound2 = ripple.newSound {
+	source = love.audio.newSource('bloop2.ogg', 'static'),
+	tags = {},
 }
 
-testSound:setEffect 'cavern'
-
 function love.keypressed(key)
-	if key == 'space' then
-		testSound:play {
-			volume = .5 + .5 * love.math.random(),
-			pitch = .5 + love.math.random(),
-		}
-	end
-	if key == 'return' then
-		testSound:stop()
-	end
-	if key == 'p' then testSound:pause() end
-	if key == 'r' then testSound:resume() end
+	if key == '1' then testSound:play() end
+	if key == '2' then testSound2:play() end
+
+	if key == 'return' then sfx:setEffect() end
+	if key == 'space' then testSound2:tag(sfx) end
 end
 
 function love.draw()
