@@ -134,6 +134,7 @@ function Sound:play(options)
 	}
 	instance.source:setVolume(self._finalVolume * instance.volume)
 	instance.source:setPitch(options.pitch or 1)
+	instance.source:seek(options.seek or 0)
 	instance.source:play()
 	table.insert(self._instances, instance)
 end

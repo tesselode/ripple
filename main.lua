@@ -9,6 +9,7 @@ function love.keypressed(key)
 		testSound:play {
 			volume = love.math.random(),
 			pitch = .5 + love.math.random(),
+			seek = .5 * love.math.random(),
 		}
 	end
 	if key == 'return' then
