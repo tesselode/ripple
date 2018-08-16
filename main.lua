@@ -22,11 +22,11 @@ sfx:setEffect 'echo'
 sfx:setEffect 'reverb'
 
 local testSound = ripple.newSound {
-	source = love.audio.newSource('bloop.ogg', 'static'),
+	source = love.audio.newSource('test/bloop.ogg', 'static'),
 	tags = {sfx},
 }
 local testSound2 = ripple.newSound {
-	source = love.audio.newSource('bloop2.ogg', 'static'),
+	source = love.audio.newSource('test/bloop2.ogg', 'static'),
 }
 
 function love.keypressed(key)
