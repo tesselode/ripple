@@ -94,3 +94,7 @@ tag:setEffect(name, filtersettings)
 ```
 
 Tag effects will be applied to every sound with that tag.
+
+## Contributing
+
+This library is still in early development, so feel free to report bugs, make pull requests, or just make suggestions about the code or design of the library. To run the test project, run `lovec .` in the ripple base directory.
