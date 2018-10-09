@@ -82,6 +82,24 @@ function Tag:setEffect(name, filter)
 	end
 end
 
+function Tag:stop()
+	for sound, _ in pairs(self._sounds) do
+		sound:stop()
+	end
+end
+
+function Tag:pause()
+	for sound, _ in pairs(self._sounds) do
+		sound:pause()
+	end
+end
+
+function Tag:resume()
+	for sound, _ in pairs(self._sounds) do
+		sound:resume()
+	end
+end
+
 function ripple.newTag()
 	return setmetatable({
 		_volume = 1,
