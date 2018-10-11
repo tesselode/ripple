@@ -61,6 +61,8 @@ You can get a list of the tags a sound is currently tagged with using `sound.get
 local tags = sound:getTags()
 ```
 
+You can pause, resume, or stop all of the currently playing sounds with a tag using `tag:pause()`, `tag:resume()`, and `tag:stop()`.
+
 ### Adjusting volume levels
 
 You can adjust the volume of individual sounds by setting the `volume` property of a sound. You can also adjust the volume of a tag by setting its `volume` property. The overall volume level of a sound is its own volume multiplied by the volume of each of its tags. This allows you to easily set the volume of categories of sounds. For example, you could have separate "music" and "sfx" tags, and you can adjust the volume of all music tracks and sound effects at once by setting the volume of their respective tags.
