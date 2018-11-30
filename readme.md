@@ -16,13 +16,14 @@ ripple = require 'path.to.ripple' -- if it's in subfolders
 ### Loading sounds
 
 ```lua
-local sound = ripple.newSound(options)
+local sound = ripple.newSound(source, options)
 ```
 
-Use `ripple.newSound` to load a sound. `options` is a table with the following keys:
-- `source` - the source to use for the sound. Sources can be created using [`love.audio.newSource`](https://love2d.org/wiki/love.audio.newSource).
-- `volume` (optional) - the volume of the sound, from 0 to 1. Defaults to 1.
-- `tags` (optional) - a list of tags to apply to the sound (see below for more information on tags).
+Use `ripple.newSound` to load a sound.
+- `source` - the Source or SoundData to use for the sound. Sources can be created using [`love.audio.newSource`](https://love2d.org/wiki/love.audio.newSource), and SoundData can be created using [`love.sound.newSoundData`](https://love2d.org/wiki/love.sound.newSoundData).
+- `options` (optional) - a table of additional options to apply to the sound. The table can have the following keys:
+    - `volume` (optional) - the volume of the sound, from 0 to 1. Defaults to 1.
+    - `tags` (optional) - a list of tags to apply to the sound (see below for more information on tags).
 
 ### Playing sounds
 

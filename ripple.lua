@@ -238,9 +238,13 @@ function Sound:pause()
 	self:_removeInstances()
 end
 
-function ripple.newSound(options)
+function ripple.newSound(source, options)
+	options = options or {}
+	if source:typeOf 'SoundData' then
+		source = love.audio.newSource(source)
+	end
 	local sound = setmetatable({
-		_source = options.source,
+		_source = source,
 		_volume = options.volume or 1,
 		_tags = {},
 		_instances = {},
