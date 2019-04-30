@@ -238,7 +238,7 @@ function Sound:untag(tag)
 end
 
 -- Gets a list of the tags the sound has.
-function Sound:getTags()
+function Sound:_getTags()
 	local tags = {}
 	for tag, _ in pairs(self._tags) do
 		table.insert(tags, tag)
@@ -247,7 +247,7 @@ function Sound:getTags()
 end
 
 -- Sets the tags the sound should have.
-function Sound:setTags(tags)
+function Sound:_setTags(tags)
 	for tag, _ in pairs(self._tags) do
 		self:untag(tag)
 	end
@@ -291,6 +291,7 @@ end
 
 function Sound:__index(k)
 	return k == 'volume' and self._volume
+	    or k == 'tags' and self:_getTags()
 		or rawget(self, k)
 		or Sound[k]
 end
@@ -299,6 +300,8 @@ function Sound:__newindex(k, v)
 	if k == 'volume' then
 		self._volume = v
 		self:_updateVolume()
+	elseif k == 'tags' then
+		self:_setTags(v)
 	else
 		rawset(self, k, v)
 	end
@@ -316,7 +319,7 @@ function ripple.newSound(source, options)
 		_tags = {},
 		_instances = {},
 	}, Sound)
-	if options.tags then sound:setTags(options.tags) end
+	if options.tags then sound:_setTags(options.tags) end
 	sound:_updateVolume()
 	return sound
 end
