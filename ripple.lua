@@ -27,6 +27,14 @@ local ripple = {
 	]]
 }
 
+--[[
+	Tags
+	----
+	Tags are categories for sounds. Sounds can have any combination of tags,
+	and tags can be added or removed at any time. When applied to a sound,
+	a tag will affect the volume level of the sound and the effects
+	that are applied to it.
+]]
 local Tag = {}
 
 function Tag:__index(k)
@@ -43,6 +51,8 @@ function Tag:__newindex(k, v)
 	end
 end
 
+-- Adds a sound to the tag's internal list of sounds
+-- and applies the tag effects to the sound if necessary.
 function Tag:_addSound(sound)
 	self._sounds[sound] = true
 	for name, effect in pairs(self._effects) do
@@ -50,6 +60,8 @@ function Tag:_addSound(sound)
 	end
 end
 
+-- Removes a sound from the tag's internal list of sounds
+-- and removes the tag effects from the sound if necessary.
 function Tag:_removeSound(sound)
 	self._sounds[sound] = nil
 	for name, _ in pairs(self._effects) do
@@ -61,6 +73,8 @@ function Tag:_getVolume()
 	return self._volume
 end
 
+-- Sets the volume of a tag, and updates the final volume
+-- of each sound that has the tag.
 function Tag:_setVolume(volume)
 	self._volume = volume
 	for sound, _ in pairs(self._sounds) do
@@ -68,6 +82,8 @@ function Tag:_setVolume(volume)
 	end
 end
 
+-- Sets an effect for a tag and the sounds that have the tag.
+-- Removes the effect if filter is false.
 function Tag:setEffect(name, filter)
 	if filter == false and self._effects[name] then
 		for sound, _ in pairs(self._sounds) do
@@ -82,24 +98,28 @@ function Tag:setEffect(name, filter)
 	end
 end
 
+-- Stops all the sounds with the tag.
 function Tag:stop()
 	for sound, _ in pairs(self._sounds) do
 		sound:stop()
 	end
 end
 
+-- Pauses all the sounds with the tag.
 function Tag:pause()
 	for sound, _ in pairs(self._sounds) do
 		sound:pause()
 	end
 end
 
+-- Resumes all the sounds with the tag.
 function Tag:resume()
 	for sound, _ in pairs(self._sounds) do
 		sound:resume()
 	end
 end
 
+-- Creates a new tag.
 function ripple.newTag()
 	return setmetatable({
 		_volume = 1,
@@ -108,6 +128,11 @@ function ripple.newTag()
 	}, Tag)
 end
 
+--[[
+	Sounds
+	------
+	Represents a sound that can be played on demand.
+]]
 local Sound = {}
 
 function Sound:__index(k)
@@ -127,6 +152,9 @@ function Sound:__newindex(k, v)
 	end
 end
 
+-- Updates the final volume of the sound, which is the sound's own volume
+-- multiplied by the volume of each tag the sound has. Updates the volume
+-- of each instance accordingly.
 function Sound:_updateVolume()
 	self._finalVolume = self._volume
 	for tag, _ in pairs(self._tags) do
@@ -137,6 +165,7 @@ function Sound:_updateVolume()
 	end
 end
 
+-- Clears out instances of the sound that have finished playing.
 function Sound:_removeInstances()
 	for i = #self._instances, 1, -1 do
 		local source = self._instances[i].source
@@ -155,12 +184,14 @@ function Sound:_setVolume(volume)
 	self:_updateVolume()
 end
 
+-- Adds a tag to the sound.
 function Sound:tag(tag)
 	self._tags[tag] = true
 	tag:_addSound(self)
 	self:_updateVolume()
 end
 
+-- Removes a tag from the sound.
 function Sound:untag(tag)
 	self._tags[tag] = nil
 	tag:_removeSound(self)
@@ -175,6 +206,7 @@ function Sound:getTags()
 	return tags
 end
 
+-- Sets the tags the sound should have.
 function Sound:setTags(tags)
 	for tag, _ in pairs(self._tags) do
 		self:untag(tag)
@@ -188,6 +220,7 @@ function Sound:isLooping()
 	return self._source:isLooping()
 end
 
+-- Sets whether the sound should loop or not.
 function Sound:setLooping(enabled)
 	if enabled then
 		self._source:setLooping(true)
@@ -199,10 +232,12 @@ function Sound:setLooping(enabled)
 	end
 end
 
+-- Sets an effect on the sound. Works the same way as source.setEffect.
 function Sound:setEffect(...)
 	self._source:setEffect(...)
 end
 
+-- Resumes a paused sound.
 function Sound:resume()
 	self:_removeInstances()
 	for _, instance in ipairs(self._instances) do
@@ -210,6 +245,7 @@ function Sound:resume()
 	end
 end
 
+-- Plays the sound with the given volume, pitch, and starting position.
 function Sound:play(options)
 	self:resume()
 	options = options or {}
@@ -224,6 +260,7 @@ function Sound:play(options)
 	table.insert(self._instances, instance)
 end
 
+-- Stops the sound.
 function Sound:stop()
 	for _, instance in ipairs(self._instances) do
 		instance.source:stop()
@@ -231,6 +268,7 @@ function Sound:stop()
 	self:_removeInstances()
 end
 
+-- Pauses the sound.
 function Sound:pause()
 	for _, instance in ipairs(self._instances) do
 		instance.source:pause()
@@ -238,6 +276,7 @@ function Sound:pause()
 	self:_removeInstances()
 end
 
+-- Creates a new sound.
 function ripple.newSound(source, options)
 	options = options or {}
 	if source:typeOf 'SoundData' then
