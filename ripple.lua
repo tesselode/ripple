@@ -1,5 +1,13 @@
 local ripple = {}
 
+--[[
+	Tags
+	----
+	Tags are categories for sounds. Sounds can have any combination of tags,
+	and tags can be added or removed at any time. When applied to a sound,
+	a tag will affect the volume level of the sound and the effects
+	that are applied to it.
+]]
 local Tag = {}
 
 -- Adds a sound to the tag's internal list of sounds
@@ -20,6 +28,7 @@ function Tag:_removeSound(sound)
 	end
 end
 
+-- Updates the volume of each sound that has this tag.
 function Tag:_updateVolume()
 	for sound, _ in pairs(self._sounds) do
 		sound:_updateVolume()
@@ -87,6 +96,12 @@ function ripple.newTag()
 	}, Tag)
 end
 
+--[[
+	Instances
+	---------
+	An instance is a specific occurrence of a sound. Each time
+	a sound is played, a new instance is created.
+]]
 local Instance = {}
 
 function Instance:_updateVolume()
@@ -157,8 +172,14 @@ local function newInstance(sound, options)
 	return instance
 end
 
+--[[
+	Sounds
+	------
+	Represents a sound that can be played on demand.
+]]
 local Sound = {}
 
+-- Clears out instances of the sound that have finished playing.
 function Sound:_removeFinishedInstances()
 	for i = #self._instances, 1, -1 do
 		local instance = self._instances[i]
@@ -168,6 +189,9 @@ function Sound:_removeFinishedInstances()
 	end
 end
 
+-- Updates the final volume of the sound, which is the sound's own volume
+-- multiplied by the volume of each tag the sound has. Updates the volume
+-- of each instance accordingly.
 function Sound:_updateVolume()
 	self._finalVolume = self._volume
 	for tag, _ in pairs(self._tags) do
@@ -213,6 +237,7 @@ function Sound:untag(tag)
 	self:_updateVolume()
 end
 
+-- Gets a list of the tags the sound has.
 function Sound:getTags()
 	local tags = {}
 	for tag, _ in pairs(self._tags) do
@@ -231,6 +256,7 @@ function Sound:setTags(tags)
 	end
 end
 
+-- Plays the sound with the given volume, pitch, and starting position.
 function Sound:play(options)
 	options = options or {}
 	local instance = newInstance(self, options)
@@ -278,6 +304,7 @@ function Sound:__newindex(k, v)
 	end
 end
 
+-- Creates a new sound.
 function ripple.newSound(source, options)
 	options = options or {}
 	if source:typeOf 'SoundData' then
