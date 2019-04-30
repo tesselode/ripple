@@ -14,6 +14,10 @@ function Instance:setLooping(enabled)
 	self._source:setLooping(enabled)
 end
 
+function Instance:setEffect(...)
+	self._source:setEffect(...)
+end
+
 function Instance:pause()
 	self._source:pause()
 	self._paused = true
@@ -98,6 +102,13 @@ function Sound:setLooping(enabled)
 		for _, instance in ipairs(self._instances) do
 			instance:setLooping(enabled)
 		end
+	end
+end
+
+function Sound:setEffect(...)
+	self._source:setEffect(...)
+	for _, instance in ipairs(self._instances) do
+		instance:setEffect(...)
 	end
 end
 
