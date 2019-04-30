@@ -108,14 +108,6 @@ function Instance:_updateVolume()
 	self._source:setVolume(self._volume * self._sound._finalVolume)
 end
 
-function Instance:isLooping()
-	return self._source:isLooping()
-end
-
-function Instance:setLooping(enabled)
-	self._source:setLooping(enabled)
-end
-
 function Instance:setEffect(...)
 	self._source:setEffect(...)
 end
@@ -142,6 +134,7 @@ end
 function Instance:__index(k)
 	return k == 'volume' and self._volume
 		or k == 'pitch' and self._source:getPitch()
+		or k == 'loop' and self._source:isLooping()
 		or rawget(self, k)
 		or Instance[k]
 end
@@ -152,6 +145,8 @@ function Instance:__newindex(k, v)
 		self:_updateVolume()
 	elseif k == 'pitch' then
 		self._source:setPitch(v)
+	elseif k == 'loop' then
+		self._source:setLooping(v)
 	else
 		rawset(self, k, v)
 	end
@@ -199,20 +194,6 @@ function Sound:_updateVolume()
 	end
 	for _, instance in ipairs(self._instances) do
 		instance:_updateVolume()
-	end
-end
-
-function Sound:isLooping()
-	return self._source:isLooping()
-end
-
--- Sets whether the sound should loop or not.
-function Sound:setLooping(enabled)
-	self._source:setLooping(enabled)
-	if not enabled then
-		for _, instance in ipairs(self._instances) do
-			instance:setLooping(enabled)
-		end
 	end
 end
 
@@ -291,7 +272,8 @@ end
 
 function Sound:__index(k)
 	return k == 'volume' and self._volume
-	    or k == 'tags' and self:_getTags()
+		or k == 'tags' and self:_getTags()
+		or k == 'loop' and self._source:isLooping()
 		or rawget(self, k)
 		or Sound[k]
 end
@@ -302,6 +284,13 @@ function Sound:__newindex(k, v)
 		self:_updateVolume()
 	elseif k == 'tags' then
 		self:_setTags(v)
+	elseif k == 'loop' then
+		self._source:setLooping(v)
+		if not v then
+			for _, instance in ipairs(self._instances) do
+				instance.loop = v
+			end
+		end
 	else
 		rawset(self, k, v)
 	end
@@ -315,10 +304,11 @@ function ripple.newSound(source, options)
 	end
 	local sound = setmetatable({
 		_source = source,
-		_volume = options.volume or 1,
 		_tags = {},
 		_instances = {},
 	}, Sound)
+	sound.volume = options.volume or 1
+	if options.loop then sound.loop = options.loop end
 	if options.tags then sound:_setTags(options.tags) end
 	sound:_updateVolume()
 	return sound
