@@ -104,6 +104,13 @@ end
 ]]
 local Instance = {}
 
+function Instance:_play(options)
+	self.volume = options and options.volume or 1
+	self.pitch = options and options.pitch or 1
+	self._source:seek(options and options.seek or 0)
+	self._source:play()
+end
+
 function Instance:_updateVolume()
 	self._source:setVolume(self._volume * self._sound._finalVolume)
 end
@@ -152,19 +159,12 @@ function Instance:__newindex(k, v)
 	end
 end
 
-local function newInstance(sound, options)
-	options = options or {}
-	local instance = setmetatable({
+local function newInstance(sound)
+	return setmetatable({
 		_sound = sound,
 		_source = sound._source:clone(),
-		_volume = options.volume or 1,
-		_pitch = options.pitch or 1,
 		_paused = false,
 	}, Instance)
-	instance:_updateVolume()
-	instance._source:seek(options.seek or 0)
-	instance._source:play()
-	return instance
 end
 
 --[[
@@ -173,16 +173,6 @@ end
 	Represents a sound that can be played on demand.
 ]]
 local Sound = {}
-
--- Clears out instances of the sound that have finished playing.
-function Sound:_removeFinishedInstances()
-	for i = #self._instances, 1, -1 do
-		local instance = self._instances[i]
-		if instance:isStopped() then
-			table.remove(self._instances, i)
-		end
-	end
-end
 
 -- Updates the final volume of the sound, which is the sound's own volume
 -- multiplied by the volume of each tag the sound has. Updates the volume
@@ -239,10 +229,15 @@ end
 
 -- Plays the sound with the given volume, pitch, and starting position.
 function Sound:play(options)
-	options = options or {}
-	local instance = newInstance(self, options)
+	for _, instance in ipairs(self._instances) do
+		if instance:isStopped() then
+			instance:_play(options)
+			return instance
+		end
+	end
+	local instance = newInstance(self)
 	table.insert(self._instances, instance)
-	self:_removeFinishedInstances()
+	instance:_play(options)
 	return instance
 end
 
@@ -251,7 +246,6 @@ function Sound:pause()
 	for _, instance in ipairs(self._instances) do
 		instance:pause()
 	end
-	self:_removeFinishedInstances()
 end
 
 -- Resumes a paused sound.
@@ -259,7 +253,6 @@ function Sound:resume()
 	for _, instance in ipairs(self._instances) do
 		instance:resume()
 	end
-	self:_removeFinishedInstances()
 end
 
 -- Stops the sound.
@@ -267,7 +260,6 @@ function Sound:stop()
 	for _, instance in ipairs(self._instances) do
 		instance:stop()
 	end
-	self:_removeFinishedInstances()
 end
 
 function Sound:__index(k)

@@ -32,5 +32,5 @@ function love.keypressed(key)
 end
 
 function love.draw()
-	love.graphics.print(#testSound._instances)
+	love.graphics.print('Memory usage: ' .. math.floor(collectgarbage 'count') .. ' kb')
 end
