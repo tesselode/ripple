@@ -1,5 +1,7 @@
 local ripple = {}
 
+local unpack = unpack or table.unpack -- luacheck: ignore
+
 local Taggable = {}
 
 function Taggable:_getTotalVolume()
