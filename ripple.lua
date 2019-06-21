@@ -15,6 +15,10 @@ local unpack = unpack or table.unpack -- luacheck: ignore
 ]]
 local Taggable = {}
 
+--[[
+	Gets the total volume of this object given its own volume
+	and the volume of each of its tags.
+]]
 function Taggable:_getTotalVolume()
 	local volume = self.volume
 	for tag, _ in pairs(self._tags) do
@@ -23,21 +27,38 @@ function Taggable:_getTotalVolume()
 	return volume
 end
 
+--[[
+	Gets all the effects that should be applied to this object given
+	its own effects and the effects of each of its tags. The object's
+	own effects will override tag effects.
+
+	Note: currently, if multiple tags define settings for the same effect,
+	the final result is undefined, as taggable objects use pairs to iterate
+	through the tags, which iterates in an undefined order.
+]]
 function Taggable:_getAllEffects()
 	local effects = {}
 	for tag, _ in pairs(self._tags) do
-		for name, properties in pairs(tag:_getAllEffects()) do
-			effects[name] = properties
+		for name, filterSettings in pairs(tag:_getAllEffects()) do
+			effects[name] = filterSettings
 		end
 	end
-	for name, properties in pairs(self._effects) do
-		effects[name] = properties
+	for name, filterSettings in pairs(self._effects) do
+		effects[name] = filterSettings
 	end
 	return effects
 end
 
+--[[
+	A callback that is called when anything happens that could
+	lead to a change in the object's total volume.
+]]
 function Taggable:_onChangeVolume() end
 
+--[[
+	A callback that is called when anything happens that could
+	change which effects are applied to the object.
+]]
 function Taggable:_onChangeEffects() end
 
 function Taggable:_setVolume(volume)
@@ -45,14 +66,18 @@ function Taggable:_setVolume(volume)
 	self:_onChangeVolume()
 end
 
+--[[
+	Given an options table, initializes the object's volume,
+	tags, and effects.
+]]
 function Taggable:_setOptions(options)
 	self.volume = options and options.volume or 1
 	if options and options.tags then
 		self:tag(unpack(options.tags))
 	end
 	if options and options.effects then
-		for name, properties in pairs(options.effects) do
-			self:setEffect(name, properties)
+		for name, filterSettings in pairs(options.effects) do
+			self:setEffect(name, filterSettings)
 		end
 	end
 end
@@ -77,9 +102,16 @@ function Taggable:untag(...)
 	self:_onChangeEffects()
 end
 
-function Taggable:setEffect(name, properties)
-	if properties == nil then properties = true end
-	self._effects[name] = properties
+--[[
+	Sets an effect for this object. filterSettings can be the following types:
+	- table - the effect will be enabled with the filter settings given in the table
+	- true/nil - the effect will be enabled with no filter
+	- false - the effect will be explicitly disabled, overriding effect settings
+	from a parent sound or tag
+]]
+function Taggable:setEffect(name, filterSettings)
+	if filterSettings == nil then filterSettings = true end
+	self._effects[name] = filterSettings
 	self:_onChangeEffects()
 end
 
@@ -107,6 +139,10 @@ function Taggable:__newindex(key, value)
 	end
 end
 
+--[[
+	Represents a tag that can be applied to sounds,
+	instances of sounds, or other tags.
+]]
 local Tag = {__newindex = Taggable.__newindex}
 
 function Tag:__index(key)
@@ -115,12 +151,14 @@ function Tag:__index(key)
 end
 
 function Tag:_onChangeVolume()
+	-- tell children about a potential volume change
 	for child, _ in pairs(self._children) do
 		child:_onChangeVolume()
 	end
 end
 
 function Tag:_onChangeEffect()
+	-- tell children about a potential effect change
 	for child, _ in pairs(self._children) do
 		child:_onChangeEffect()
 	end
@@ -136,6 +174,7 @@ function ripple.newTag(options)
 	return tag
 end
 
+-- Represents a specific occurrence of a sound.
 local Instance = {__newindex = Taggable.__newindex}
 
 function Instance:__index(key)
@@ -145,6 +184,7 @@ end
 
 function Instance:_getTotalVolume()
 	local volume = Taggable._getTotalVolume(self)
+	-- apply sound volume as well as tag/self volumes
 	volume = volume * self._sound:_getTotalVolume()
 	return volume
 end
@@ -152,37 +192,39 @@ end
 function Instance:_getAllEffects()
 	local effects = {}
 	for tag, _ in pairs(self._tags) do
-		for name, properties in pairs(tag:_getAllEffects()) do
-			effects[name] = properties
+		for name, filterSettings in pairs(tag:_getAllEffects()) do
+			effects[name] = filterSettings
 		end
 	end
-	for name, properties in pairs(self._sound:_getAllEffects()) do
-		effects[name] = properties
+	-- apply sound effects as well as tag/self effects
+	for name, filterSettings in pairs(self._sound:_getAllEffects()) do
+		effects[name] = filterSettings
 	end
-	for name, properties in pairs(self._effects) do
-		effects[name] = properties
+	for name, filterSettings in pairs(self._effects) do
+		effects[name] = filterSettings
 	end
 	return effects
 end
 
 function Instance:_onChangeVolume()
+	-- update the source's volume
 	self._source:setVolume(self:_getTotalVolume())
 end
 
 function Instance:_onChangeEffects()
 	-- get the list of effects that should be applied
 	local effects = self:_getAllEffects()
-	for name, properties in pairs(effects) do
+	for name, filterSettings in pairs(effects) do
 		-- remember which effects are currently applied to the source
-		if properties == false then
+		if filterSettings == false then
 			self._appliedEffects[name] = nil
 		else
 			self._appliedEffects[name] = true
 		end
-		if properties == true then
+		if filterSettings == true then
 			self._source:setEffect(name)
 		else
-			self._source:setEffect(name, properties)
+			self._source:setEffect(name, filterSettings)
 		end
 	end
 	-- remove effects that are currently applied but shouldn't be anymore
@@ -194,6 +236,7 @@ function Instance:_onChangeEffects()
 	end
 end
 
+-- Represents a sound that can be played.
 local Sound = {__newindex = Taggable.__newindex}
 
 function Sound:__index(key)
@@ -202,12 +245,14 @@ function Sound:__index(key)
 end
 
 function Sound:_onChangeVolume()
+	-- tell instances about potential volume changes
 	for _, instance in ipairs(self._instances) do
 		instance:_onChangeVolume()
 	end
 end
 
 function Sound:_onChangeEffects()
+	-- tell instances about potential effect changes
 	for _, instance in ipairs(self._instances) do
 		instance:_onChangeEffects()
 	end
