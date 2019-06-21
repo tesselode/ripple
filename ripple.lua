@@ -45,6 +45,18 @@ function Taggable:_setVolume(volume)
 	self:_onChangeVolume()
 end
 
+function Taggable:_setOptions(options)
+	self.volume = options and options.volume or 1
+	if options and options.tags then
+		self:tag(unpack(options.tags))
+	end
+	if options and options.effects then
+		for name, properties in pairs(options.effects) do
+			self:setEffect(name, properties)
+		end
+	end
+end
+
 function Taggable:tag(...)
 	for i = 1, select('#', ...) do
 		local tag = select(i, ...)
@@ -114,15 +126,7 @@ function ripple.newTag(options)
 		_tags = {},
 		_children = {},
 	}, Tag)
-	tag.volume = options and options.volume or 1
-	if options and options.tags then
-		tag:tag(unpack(options.tags))
-	end
-	if options and options.effects then
-		for name, properties in pairs(options.effects) do
-			tag:setEffect(name, properties)
-		end
-	end
+	tag:_setOptions(options)
 	return tag
 end
 
@@ -195,15 +199,7 @@ function Sound:play(options)
 		_effects = {},
 		_tags = {},
 	}, Instance)
-	instance.volume = options and options.volume or 1
-	if options and options.tags then
-		instance:tag(unpack(options.tags))
-	end
-	if options and options.effects then
-		for name, properties in pairs(options.effects) do
-			instance:setEffect(name, properties)
-		end
-	end
+	instance:_setOptions(options)
 	instance:_onChangeEffects()
 	instance._source:play()
 	table.insert(self._instances, instance)
@@ -217,15 +213,7 @@ function ripple.newSound(source, options)
 		_tags = {},
 		_instances = {},
 	}, Sound)
-	sound.volume = options and options.volume or 1
-	if options and options.tags then
-		sound:tag(unpack(options.tags))
-	end
-	if options and options.effects then
-		for name, properties in pairs(options.effects) do
-			sound:setEffect(name, properties)
-		end
-	end
+	sound:_setOptions(options)
 	return sound
 end
 

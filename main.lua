@@ -17,8 +17,6 @@ function love.keypressed(key)
 		testSound:tag(testTag)
 	end
 	if key == 'space' then
-		testSound:play {
-			effects = {reverb = false},
-		}
+		testSound:play()
 	end
 end
