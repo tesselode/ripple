@@ -78,7 +78,13 @@ function Taggable:untag(...)
 end
 
 function Taggable:setEffect(name, properties)
+	if properties == nil then properties = true end
 	self._effects[name] = properties
+	self:_onChangeEffects()
+end
+
+function Taggable:removeEffect(name)
+	self._effects[name] = nil
 	self:_onChangeEffects()
 end
 
