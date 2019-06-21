@@ -164,11 +164,26 @@ function Instance:_onChangeVolume()
 end
 
 function Instance:_onChangeEffects()
-	for name, properties in pairs(self:_getAllEffects()) do
+	-- get the list of effects that should be applied
+	local effects = self:_getAllEffects()
+	for name, properties in pairs(effects) do
+		-- remember which effects are currently applied to the source
+		if properties == false then
+			self._appliedEffects[name] = nil
+		else
+			self._appliedEffects[name] = true
+		end
 		if properties == true then
 			self._source:setEffect(name)
 		else
 			self._source:setEffect(name, properties)
+		end
+	end
+	-- remove effects that are currently applied but shouldn't be anymore
+	for name in pairs(self._appliedEffects) do
+		if not effects[name] then
+			self._source:setEffect(name, false)
+			self._appliedEffects[name] = nil
 		end
 	end
 end
@@ -198,6 +213,7 @@ function Sound:play(options)
 		_source = self._source:clone(),
 		_effects = {},
 		_tags = {},
+		_appliedEffects = {},
 	}, Instance)
 	instance:_setOptions(options)
 	instance:_onChangeEffects()
