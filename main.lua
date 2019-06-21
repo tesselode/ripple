@@ -1,18 +1,24 @@
 local ripple = require 'ripple'
 
-local testTag1 = ripple.newTag {volume = .5}
-local testTag2 = ripple.newTag {volume = .1}
+love.audio.setEffect('reverb', {
+	type = 'reverb',
+	gain = 1,
+	decaytime = 5,
+})
 
-local testSound = ripple.newSound(love.audio.newSource('test/bloop.ogg', 'static'))
+local testSource = love.audio.newSource('test/bloop.ogg', 'static')
+local testTag = ripple.newTag {
+	effects = {reverb = true},
+}
+local testSound = ripple.newSound(testSource)
 
 function love.keypressed(key)
+	if key == '1' then
+		testSound:tag(testTag)
+	end
 	if key == 'space' then
-		instance = testSound:play()
-	elseif key == '1' then
-		testSound:tag(testTag1)
-	elseif key == '2' then
-		if instance then
-			instance:tag(testTag2)
-		end
+		testSound:play {
+			effects = {reverb = false},
+		}
 	end
 end

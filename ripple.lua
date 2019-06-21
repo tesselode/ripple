@@ -2,6 +2,17 @@ local ripple = {}
 
 local unpack = unpack or table.unpack -- luacheck: ignore
 
+--[[
+	Represents an object that:
+	- can have tags applied
+	- has a volume
+	- can have effects applied
+
+	Tags, instances, and sounds are all taggable.
+
+	Note that not all taggable objects have children - tags and sounds
+	do, but instances do not.
+]]
 local Taggable = {}
 
 function Taggable:_getTotalVolume()
@@ -12,7 +23,22 @@ function Taggable:_getTotalVolume()
 	return volume
 end
 
+function Taggable:_getAllEffects()
+	local effects = {}
+	for tag, _ in pairs(self._tags) do
+		for name, properties in pairs(tag:_getAllEffects()) do
+			effects[name] = properties
+		end
+	end
+	for name, properties in pairs(self._effects) do
+		effects[name] = properties
+	end
+	return effects
+end
+
 function Taggable:_onChangeVolume() end
+
+function Taggable:_onChangeEffects() end
 
 function Taggable:_setVolume(volume)
 	self._volume = volume
@@ -26,6 +52,7 @@ function Taggable:tag(...)
 		tag._children[self] = true
 	end
 	self:_onChangeVolume()
+	self:_onChangeEffects()
 end
 
 function Taggable:untag(...)
@@ -35,6 +62,16 @@ function Taggable:untag(...)
 		tag._children[self] = nil
 	end
 	self:_onChangeVolume()
+	self:_onChangeEffects()
+end
+
+function Taggable:setEffect(name, properties)
+	self._effects[name] = properties
+	self:_onChangeEffects()
+end
+
+function Taggable:getEffect(name)
+	return self._effects[name]
 end
 
 function Taggable:__index(key)
@@ -65,14 +102,26 @@ function Tag:_onChangeVolume()
 	end
 end
 
+function Tag:_onChangeEffect()
+	for child, _ in pairs(self._children) do
+		child:_onChangeEffect()
+	end
+end
+
 function ripple.newTag(options)
 	local tag = setmetatable({
+		_effects = {},
 		_tags = {},
 		_children = {},
 	}, Tag)
 	tag.volume = options and options.volume or 1
 	if options and options.tags then
 		tag:tag(unpack(options.tags))
+	end
+	if options and options.effects then
+		for name, properties in pairs(options.effects) do
+			tag:setEffect(name, properties)
+		end
 	end
 	return tag
 end
@@ -90,8 +139,34 @@ function Instance:_getTotalVolume()
 	return volume
 end
 
+function Instance:_getAllEffects()
+	local effects = {}
+	for tag, _ in pairs(self._tags) do
+		for name, properties in pairs(tag:_getAllEffects()) do
+			effects[name] = properties
+		end
+	end
+	for name, properties in pairs(self._sound:_getAllEffects()) do
+		effects[name] = properties
+	end
+	for name, properties in pairs(self._effects) do
+		effects[name] = properties
+	end
+	return effects
+end
+
 function Instance:_onChangeVolume()
 	self._source:setVolume(self:_getTotalVolume())
+end
+
+function Instance:_onChangeEffects()
+	for name, properties in pairs(self:_getAllEffects()) do
+		if properties == true then
+			self._source:setEffect(name)
+		else
+			self._source:setEffect(name, properties)
+		end
+	end
 end
 
 local Sound = {__newindex = Taggable.__newindex}
@@ -107,16 +182,29 @@ function Sound:_onChangeVolume()
 	end
 end
 
+function Sound:_onChangeEffects()
+	for _, instance in ipairs(self._instances) do
+		instance:_onChangeEffects()
+	end
+end
+
 function Sound:play(options)
 	local instance = setmetatable({
 		_sound = self,
 		_source = self._source:clone(),
+		_effects = {},
 		_tags = {},
 	}, Instance)
 	instance.volume = options and options.volume or 1
 	if options and options.tags then
 		instance:tag(unpack(options.tags))
 	end
+	if options and options.effects then
+		for name, properties in pairs(options.effects) do
+			instance:setEffect(name, properties)
+		end
+	end
+	instance:_onChangeEffects()
 	instance._source:play()
 	table.insert(self._instances, instance)
 	return instance
@@ -125,10 +213,19 @@ end
 function ripple.newSound(source, options)
 	local sound = setmetatable({
 		_source = source,
+		_effects = {},
 		_tags = {},
 		_instances = {},
 	}, Sound)
 	sound.volume = options and options.volume or 1
+	if options and options.tags then
+		sound:tag(unpack(options.tags))
+	end
+	if options and options.effects then
+		for name, properties in pairs(options.effects) do
+			sound:setEffect(name, properties)
+		end
+	end
 	return sound
 end
 
