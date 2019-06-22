@@ -241,6 +241,8 @@ function Instance:_getTotalVolume()
 	local volume = Taggable._getTotalVolume(self)
 	-- apply sound volume as well as tag/self volumes
 	volume = volume * self._sound:_getTotalVolume()
+	-- apply fade volume
+	volume = volume * self._fadeVolume
 	return volume
 end
 
@@ -292,6 +294,14 @@ function Instance:_onChangeEffects()
 end
 
 function Instance:_play(options)
+	if options and options.fadeDuration then
+		self._fadeVolume = 0
+		self._fadeDirection = 1
+		self._fadeSpeed = 1 / options.fadeDuration
+	else
+		self._fadeVolume = 1
+	end
+	self._afterFadingOut = false
 	self._paused = false
 	self:_setOptions(options)
 	self.pitch = options and options.pitch or 1
@@ -302,23 +312,65 @@ function Instance:_play(options)
 	self._source:play()
 end
 
+function Instance:_update(dt)
+	-- fade in
+	if self._fadeDirection == 1 and self._fadeVolume < 1 then
+		self._fadeVolume = self._fadeVolume + self._fadeSpeed * dt
+		if self._fadeVolume > 1 then self._fadeVolume = 1 end
+		self:_onChangeVolume()
+	-- fade out
+	elseif self._fadeDirection == -1 and self._fadeVolume > 0 then
+		self._fadeVolume = self._fadeVolume - self._fadeSpeed * dt
+		if self._fadeVolume < 0 then
+			self._fadeVolume = 0
+			-- pause or stop after fading out
+			if self._afterFadingOut == 'pause' then
+				self:pause()
+			elseif self._afterFadingOut == 'stop' then
+				self:stop()
+			end
+		end
+		self:_onChangeVolume()
+	end
+end
+
 function Instance:isStopped()
 	return (not self._source:isPlaying()) and (not self._paused)
 end
 
-function Instance:pause()
-	self._source:pause()
-	self._paused = true
+function Instance:pause(fadeDuration)
+	if fadeDuration and not self._paused then
+		self._fadeDirection = -1
+		self._fadeSpeed = 1 / fadeDuration
+		self._afterFadingOut = 'pause'
+	else
+		self._source:pause()
+		self._paused = true
+	end
 end
 
-function Instance:resume()
+function Instance:resume(fadeDuration)
+	if fadeDuration then
+		if self._paused then
+			self._fadeVolume = 0
+			self:_onChangeVolume()
+		end
+		self._fadeDirection = 1
+		self._fadeSpeed = 1 / fadeDuration
+	end
 	self._source:play()
 	self._paused = false
 end
 
-function Instance:stop()
-	self._source:stop()
-	self._paused = false
+function Instance:stop(fadeDuration)
+	if fadeDuration and not self._paused then
+		self._fadeDirection = -1
+		self._fadeSpeed = 1 / fadeDuration
+		self._afterFadingOut = 'stop'
+	else
+		self._source:stop()
+		self._paused = false
+	end
 end
 
 -- Represents a sound that can be played.
@@ -379,21 +431,31 @@ function Sound:play(options)
 	return instance
 end
 
-function Sound:pause()
+function Sound:pause(fadeDuration)
+	fadeDuration = fadeDuration or self._receivedUpdate and self.defaultFadeDuration
 	for _, instance in ipairs(self._instances) do
-		instance:pause()
+		instance:pause(fadeDuration)
 	end
 end
 
-function Sound:resume()
+function Sound:resume(fadeDuration)
+	fadeDuration = fadeDuration or self._receivedUpdate and self.defaultFadeDuration
 	for _, instance in ipairs(self._instances) do
-		instance:resume()
+		instance:resume(fadeDuration)
 	end
 end
 
-function Sound:stop()
+function Sound:stop(fadeDuration)
+	fadeDuration = fadeDuration or self._receivedUpdate and self.defaultFadeDuration
 	for _, instance in ipairs(self._instances) do
-		instance:stop()
+		instance:stop(fadeDuration)
+	end
+end
+
+function Sound:update(dt)
+	self._receivedUpdate = true
+	for _, instance in ipairs(self._instances) do
+		instance:_update(dt)
 	end
 end
 
@@ -403,9 +465,11 @@ function ripple.newSound(source, options)
 		_effects = {},
 		_tags = {},
 		_instances = {},
+		_receivedUpdate = false,
 	}, Sound)
 	sound:_setOptions(options)
 	if options and options.loop then sound.loop = true end
+	sound.defaultFadeDuration = options and options.defaultFadeDuration or .025
 	return sound
 end
 

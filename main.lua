@@ -2,24 +2,21 @@ local ripple = require 'ripple'
 
 local testSound = ripple.newSound(love.audio.newSource('test/bloop.ogg', 'static'), {
 	loop = true,
+	defaultFadeDuration = 1,
 })
 
 function love.update(dt)
-	if instance then
-		instance.pitch = instance.pitch + 1 * dt
-	end
+	testSound:update(dt)
 end
 
 function love.keypressed(key)
 	if key == 'space' then
-		instance = testSound:play {pitch = .1}
-	elseif key == 's' then
-		if instance then instance:stop() end
+		testSound:play()
 	elseif key == 'p' then
-		if instance then instance:pause() end
+		testSound:pause()
 	elseif key == 'r' then
-		if instance then instance:resume() end
-	elseif key == 'a' then
+		testSound:resume()
+	elseif key == 's' then
 		testSound:stop()
 	end
 end
