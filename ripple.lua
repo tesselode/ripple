@@ -217,7 +217,9 @@ end
 local Instance = {}
 
 function Instance:__index(key)
-	if key == 'loop' then
+	if key == 'pitch' then
+		return self._source:getPitch()
+	elseif key == 'loop' then
 		return self._source:isLooping()
 	elseif Instance[key] then
 		return Instance[key]
@@ -226,7 +228,9 @@ function Instance:__index(key)
 end
 
 function Instance:__newindex(key, value)
-	if key == 'loop' then
+	if key == 'pitch' then
+		self._source:setPitch(value)
+	elseif key == 'loop' then
 		self._source:setLooping(value)
 	else
 		Taggable.__newindex(self, key, value)

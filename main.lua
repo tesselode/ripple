@@ -4,9 +4,15 @@ local testSound = ripple.newSound(love.audio.newSource('test/bloop.ogg', 'static
 	loop = true,
 })
 
+function love.update(dt)
+	if instance then
+		instance.pitch = instance.pitch + 1 * dt
+	end
+end
+
 function love.keypressed(key)
 	if key == 'space' then
-		instance = testSound:play()
+		instance = testSound:play {pitch = .1}
 	elseif key == 's' then
 		if instance then instance:stop() end
 	elseif key == 'p' then
