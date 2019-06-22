@@ -214,11 +214,23 @@ function ripple.newTag(options)
 end
 
 -- Represents a specific occurrence of a sound.
-local Instance = {__newindex = Taggable.__newindex}
+local Instance = {}
 
 function Instance:__index(key)
-	if Instance[key] then return Instance[key] end
+	if key == 'loop' then
+		return self._source:isLooping()
+	elseif Instance[key] then
+		return Instance[key]
+	end
 	return Taggable.__index(self, key)
+end
+
+function Instance:__newindex(key, value)
+	if key == 'loop' then
+		self._source:setLooping(value)
+	else
+		Taggable.__newindex(self, key, value)
+	end
 end
 
 function Instance:_getTotalVolume()
@@ -279,6 +291,9 @@ function Instance:_play(options)
 	self._paused = false
 	self:_setOptions(options)
 	self.pitch = options and options.pitch or 1
+	if options and options.loop ~= nil then
+		self.loop = options.loop
+	end
 	self._source:seek(options and options.seek or 0)
 	self._source:play()
 end
@@ -287,12 +302,42 @@ function Instance:isStopped()
 	return (not self._source:isPlaying()) and (not self._paused)
 end
 
+function Instance:pause()
+	self._source:pause()
+	self._paused = true
+end
+
+function Instance:resume()
+	self._source:play()
+	self._paused = false
+end
+
+function Instance:stop()
+	self._source:stop()
+	self._paused = false
+end
+
 -- Represents a sound that can be played.
-local Sound = {__newindex = Taggable.__newindex}
+local Sound = {}
 
 function Sound:__index(key)
-	if Sound[key] then return Sound[key] end
+	if key == 'loop' then
+		return self._source:isLooping()
+	elseif Sound[key] then
+		return Sound[key]
+	end
 	return Taggable.__index(self, key)
+end
+
+function Sound:__newindex(key, value)
+	if key == 'loop' then
+		self._source:setLooping(value)
+		for _, instance in ipairs(self._instances) do
+			instance.loop = value
+		end
+	else
+		Taggable.__newindex(self, key, value)
+	end
 end
 
 function Sound:_onChangeVolume()
@@ -330,6 +375,24 @@ function Sound:play(options)
 	return instance
 end
 
+function Sound:pause()
+	for _, instance in ipairs(self._instances) do
+		instance:pause()
+	end
+end
+
+function Sound:resume()
+	for _, instance in ipairs(self._instances) do
+		instance:resume()
+	end
+end
+
+function Sound:stop()
+	for _, instance in ipairs(self._instances) do
+		instance:stop()
+	end
+end
+
 function ripple.newSound(source, options)
 	local sound = setmetatable({
 		_source = source,
@@ -338,6 +401,7 @@ function ripple.newSound(source, options)
 		_instances = {},
 	}, Sound)
 	sound:_setOptions(options)
+	if options and options.loop then sound.loop = true end
 	return sound
 end
 
