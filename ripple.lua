@@ -67,26 +67,65 @@ function Taggable:_setVolume(volume)
 end
 
 --[[
+	_tag, _untag, and _setEffect are analogous to the
+	similarly named public API functions (see below), but
+	they don't call the _onChangeVolume and _onChangeEffects
+	callbacks. This allows me to have finer control over when
+	to call those callbacks, so I can set multiple tags and
+	effects without needlessly calling the callbacks for each
+	one.
+]]
+
+function Taggable:_tag(tag)
+	self._tags[tag] = true
+	tag._children[self] = true
+end
+
+function Taggable:_untag(tag)
+	self._tags[tag] = nil
+	tag._children[self] = nil
+end
+
+function Taggable:_setEffect(name, filterSettings)
+	if filterSettings == nil then filterSettings = true end
+	self._effects[name] = filterSettings
+end
+
+--[[
 	Given an options table, initializes the object's volume,
 	tags, and effects.
 ]]
 function Taggable:_setOptions(options)
 	self.volume = options and options.volume or 1
-	if options and options.tags then
-		self:tag(unpack(options.tags))
+	-- reset tags
+	for tag in pairs(self._tags) do
+		self:_untag(tag)
 	end
-	if options and options.effects then
-		for name, filterSettings in pairs(options.effects) do
-			self:setEffect(name, filterSettings)
+	-- apply new tags
+	if options and options.tags then
+		for _, tag in ipairs(options.tags) do
+			self:_tag(tag)
 		end
 	end
+	-- reset effects
+	for name in pairs(self._effects) do
+		self._effects[name] = nil
+	end
+	-- apply new effects
+	if options and options.effects then
+		for name, filterSettings in pairs(options.effects) do
+			self:_setEffect(name, filterSettings)
+		end
+	end
+	-- update final volume and effects
+	self:_onChangeVolume()
+	self:_onChangeEffects()
 end
 
 function Taggable:tag(...)
 	for i = 1, select('#', ...) do
 		local tag = select(i, ...)
-		self._tags[tag] = true
-		tag._children[self] = true
+		self:_tag(tag)
 	end
 	self:_onChangeVolume()
 	self:_onChangeEffects()
@@ -95,8 +134,7 @@ end
 function Taggable:untag(...)
 	for i = 1, select('#', ...) do
 		local tag = select(i, ...)
-		self._tags[tag] = nil
-		tag._children[self] = nil
+		self:_untag(tag)
 	end
 	self:_onChangeVolume()
 	self:_onChangeEffects()
@@ -110,8 +148,7 @@ end
 	from a parent sound or tag
 ]]
 function Taggable:setEffect(name, filterSettings)
-	if filterSettings == nil then filterSettings = true end
-	self._effects[name] = filterSettings
+	self:_setEffect(name, filterSettings)
 	self:_onChangeEffects()
 end
 
@@ -151,14 +188,16 @@ function Tag:__index(key)
 end
 
 function Tag:_onChangeVolume()
-	-- tell children about a potential volume change
+	-- tell objects using this tag about a potential
+	-- volume change
 	for child, _ in pairs(self._children) do
 		child:_onChangeVolume()
 	end
 end
 
 function Tag:_onChangeEffect()
-	-- tell children about a potential effect change
+	-- tell objects using this tag about a potential
+	-- effect change
 	for child, _ in pairs(self._children) do
 		child:_onChangeEffect()
 	end
@@ -236,6 +275,18 @@ function Instance:_onChangeEffects()
 	end
 end
 
+function Instance:_play(options)
+	self._paused = false
+	self:_setOptions(options)
+	self.pitch = options and options.pitch or 1
+	self._source:seek(options and options.seek or 0)
+	self._source:play()
+end
+
+function Instance:isStopped()
+	return (not self._source:isPlaying()) and (not self._paused)
+end
+
 -- Represents a sound that can be played.
 local Sound = {__newindex = Taggable.__newindex}
 
@@ -259,6 +310,14 @@ function Sound:_onChangeEffects()
 end
 
 function Sound:play(options)
+	-- reuse a stopped instance if one is available
+	for _, instance in ipairs(self._instances) do
+		if instance:isStopped() then
+			instance:_play(options)
+			return instance
+		end
+	end
+	-- otherwise, create a brand new one
 	local instance = setmetatable({
 		_sound = self,
 		_source = self._source:clone(),
@@ -266,10 +325,8 @@ function Sound:play(options)
 		_tags = {},
 		_appliedEffects = {},
 	}, Instance)
-	instance:_setOptions(options)
-	instance:_onChangeEffects()
-	instance._source:play()
 	table.insert(self._instances, instance)
+	instance:_play(options)
 	return instance
 end
 

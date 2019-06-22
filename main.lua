@@ -4,23 +4,19 @@ love.audio.setEffect('chorus', {
 	type = 'chorus',
 })
 
-local testSource = love.audio.newSource('test/bloop.ogg', 'static')
-local testTag = ripple.newTag {
-	effects = {chorus = true},
-}
-local testSound = ripple.newSound(testSource, {
-	tags = {testTag},
-	effects = {
-		chorus = {
-			type = 'lowpass',
-			highgain = 0,
-		},
-	},
-})
-testSound:removeEffect 'chorus'
+local testSound = ripple.newSound(love.audio.newSource('test/bloop.ogg', 'static'))
 
 function love.keypressed(key)
-	if key == 'space' then
+	if key == '1' then
+		testSound:play {
+			effects = {chorus = true},
+		}
+	else
 		testSound:play()
 	end
+end
+
+function love.draw()
+	love.graphics.print('Instances: ' .. #testSound._instances)
+	love.graphics.print('Memory usage: ' .. math.floor(collectgarbage 'count') .. 'kb', 0, 16)
 end
