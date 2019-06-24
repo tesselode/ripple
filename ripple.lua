@@ -296,11 +296,11 @@ end
 function Instance:_play(options)
 	if options and options.fadeDuration then
 		self._fadeVolume = 0
-		self._fadeDirection = 1
 		self._fadeSpeed = 1 / options.fadeDuration
 	else
 		self._fadeVolume = 1
 	end
+	self._fadeDirection = 1
 	self._afterFadingOut = false
 	self._paused = false
 	self:_setOptions(options)

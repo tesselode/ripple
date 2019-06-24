@@ -2,7 +2,6 @@ local ripple = require 'ripple'
 
 local testSound = ripple.newSound(love.audio.newSource('test/bloop.ogg', 'static'), {
 	loop = true,
-	defaultFadeDuration = 1,
 })
 
 function love.update(dt)
