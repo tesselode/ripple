@@ -203,6 +203,27 @@ function Tag:_onChangeEffect()
 	end
 end
 
+-- Pauses all the sounds and instances tagged with this tag.
+function Tag:pause(fadeDuration)
+	for child, _ in pairs(self._children) do
+		child:pause(fadeDuration)
+	end
+end
+
+-- Resumes all the sounds and instances tagged with this tag.
+function Tag:resume(fadeDuration)
+	for child, _ in pairs(self._children) do
+		child:resume(fadeDuration)
+	end
+end
+
+-- Stops all the sounds and instances tagged with this tag.
+function Tag:stop(fadeDuration)
+	for child, _ in pairs(self._children) do
+		child:stop(fadeDuration)
+	end
+end
+
 function ripple.newTag(options)
 	local tag = setmetatable({
 		_effects = {},

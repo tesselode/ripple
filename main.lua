@@ -1,7 +1,10 @@
 local ripple = require 'ripple'
 
+local testTag = ripple.newTag()
+
 local testSound = ripple.newSound(love.audio.newSource('test/bloop.ogg', 'static'), {
 	loop = true,
+	tags = {testTag},
 })
 
 function love.update(dt)
@@ -12,11 +15,11 @@ function love.keypressed(key)
 	if key == 'space' then
 		testSound:play()
 	elseif key == 'p' then
-		testSound:pause()
+		testTag:pause(1)
 	elseif key == 'r' then
-		testSound:resume()
+		testTag:resume(1)
 	elseif key == 's' then
-		testSound:stop()
+		testTag:stop(1)
 	end
 end
 
