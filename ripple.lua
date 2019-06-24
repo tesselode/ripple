@@ -432,28 +432,24 @@ function Sound:play(options)
 end
 
 function Sound:pause(fadeDuration)
-	fadeDuration = fadeDuration or self._receivedUpdate and self.defaultFadeDuration
 	for _, instance in ipairs(self._instances) do
 		instance:pause(fadeDuration)
 	end
 end
 
 function Sound:resume(fadeDuration)
-	fadeDuration = fadeDuration or self._receivedUpdate and self.defaultFadeDuration
 	for _, instance in ipairs(self._instances) do
 		instance:resume(fadeDuration)
 	end
 end
 
 function Sound:stop(fadeDuration)
-	fadeDuration = fadeDuration or self._receivedUpdate and self.defaultFadeDuration
 	for _, instance in ipairs(self._instances) do
 		instance:stop(fadeDuration)
 	end
 end
 
 function Sound:update(dt)
-	self._receivedUpdate = true
 	for _, instance in ipairs(self._instances) do
 		instance:_update(dt)
 	end
@@ -465,11 +461,9 @@ function ripple.newSound(source, options)
 		_effects = {},
 		_tags = {},
 		_instances = {},
-		_receivedUpdate = false,
 	}, Sound)
 	sound:_setOptions(options)
 	if options and options.loop then sound.loop = true end
-	sound.defaultFadeDuration = options and options.defaultFadeDuration or .025
 	return sound
 end
 
