@@ -1,6 +1,46 @@
-# Ripple
+# Ripple <!-- omit in toc -->
 
 Ripple is an audio library for LÖVE that simplifies various aspects of audio handling, including tagging and playing multiple instances of a sound.
+
+- [Installation](#installation)
+- [API](#api)
+  - [ripple](#ripple)
+    - [Functions](#functions)
+      - [`local sound = ripple.newSound(source, options)`](#local-sound--ripplenewsoundsource-options)
+      - [`local tag = ripple.newTag(options)`](#local-tag--ripplenewtagoptions)
+  - [Taggable](#taggable)
+    - [Properties](#properties)
+      - [`Taggable.volume (number)`](#taggablevolume-number)
+    - [Functions](#functions-1)
+      - [`Taggable:tag(...)`](#taggabletag)
+      - [`Taggable:untag(...)`](#taggableuntag)
+      - [`Taggable:setEffect(name, effectSettings)`](#taggableseteffectname-effectsettings)
+      - [`Taggable:removeEffect(name)`](#taggableremoveeffectname)
+      - [`local effect = Taggable:getEffect(name)`](#local-effect--taggablegeteffectname)
+  - [Sound](#sound)
+    - [Properties](#properties-1)
+      - [`Sound.loop (boolean)`](#soundloop-boolean)
+    - [Functions](#functions-2)
+      - [`local instance = Sound:play(options)`](#local-instance--soundplayoptions)
+      - [`Sound:pause(fadeDuration)`](#soundpausefadeduration)
+      - [`Sound:resume(fadeDuration)`](#soundresumefadeduration)
+      - [`Sound:stop(fadeDuration)`](#soundstopfadeduration)
+  - [Instance](#instance)
+    - [Properties](#properties-2)
+      - [`Instance.loop (boolean)`](#instanceloop-boolean)
+      - [`Instance.pitch (number)`](#instancepitch-number)
+    - [Functions](#functions-3)
+      - [`local stopped = Instance:isStopped()`](#local-stopped--instanceisstopped)
+      - [`Instance:pause(fadeDuration)`](#instancepausefadeduration)
+      - [`Instance:resume(fadeDuration)`](#instanceresumefadeduration)
+      - [`Instance:stop(fadeDuration)`](#instancestopfadeduration)
+  - [Tag](#tag)
+    - [Functions](#functions-4)
+      - [`Tag:pause(fadeDuration)`](#tagpausefadeduration)
+      - [`Tag:resume(fadeDuration)`](#tagresumefadeduration)
+      - [`Tag:stop(fadeDuration)`](#tagstopfadeduration)
+  - [EffectSettings](#effectsettings)
+- [Contributing](#contributing)
 
 ## Installation
 
@@ -26,14 +66,11 @@ Parameters:
 - `options` (`table`) (optional) - options to apply to the sound. The options table can have the following values:
   - `volume` (`number`) (optional, defaults to `1`) - the volume of the sound, from 0 to 1
   - `tags` (`table`) (optional) - a list of tags to apply to the sound
-  - `effects` (`table`) (optional) - the effects to apply to the sound. Each key should be the name of the effect, and each value should be one of the following:
-    - `true` - enables the effect without a filter
-    - `table` - enables the effect with the filter settings specified in the table
-    - `false` - explicitly disables the effect, even if the effect would normally be inherited from a tag
+  - `effects` (`table`) (optional) - the effects to apply to the instance. Each key should be the name of the effect, and each value should be an [`EffectSettings`](#effect-settings) value
   - `loop` (`boolean`) (optional) - whether the sound should be repeated until stopped
 
 Returns:
-- `sound` (`Sound`) - the newly created sound
+- `sound` ([`Sound`](#sound)) - the newly created sound
 
 ##### `local tag = ripple.newTag(options)`
 Creates a new tag.
@@ -42,13 +79,10 @@ Parameters:
 - `options` (`table`) (optional) - options to apply to the tag. The options table can have the following values:
   - `volume` (`number`) (optional, defaults to `1`) - the volume of the tag, from 0 to 1
   - `tags` (`table`) (optional) - a list of tags to apply to the tag
-  - `effects` (`table`) (optional) - the effects to apply to the tag. Each key should be the name of the effect, and each value should be one of the following:
-    - `true` - enables the effect without a filter
-    - `table` - enables the effect with the filter settings specified in the table
-    - `false` - explicitly disables the effect, even if the effect would normally be inherited from a tag
+  - `effects` (`table`) (optional) - the effects to apply to the instance. Each key should be the name of the effect, and each value should be an [`EffectSettings`](#effect-settings) value
 
 Returns:
-- `tag` (`Tag`) - the newly created tag
+- `tag` ([`Tag`](#tag)) - the newly created tag
 
 ### Taggable
 This class is not something you create directly, but it does contain functions you can use on any taggable object: sounds, instances, and tags.
@@ -64,41 +98,32 @@ The volume of the taggable object from 0 to 1.
 Applies one or more tags to a taggable object.
 
 Parameters:
-- `...` (`Tag`) - the tags to apply
+- `...` ([`Tag`](#tag)) - the tags to apply
 
 ##### `Taggable:untag(...)`
 Removes one or more tags from a taggable object.
 
 Parameters:
-- `...` (`Tag`) - the tags to remove
+- `...` ([`Tag`](#tag)) - the tags to remove
 
-##### `Taggable:setEffect(name, filterSettings)`
+##### `Taggable:setEffect(name, effectSettings)`
 Enables or disables an effect on a taggable object.
 
 Parameters:
 - `name` (`string`) - the effect to enable or disable
-- `filterSettings` (`boolean` or `table`) (optional)
-  - `false` - explicitly disables the effect, even if the taggable object would normally inherit the effect
-  - `true` - enables the effect without any filter
-  - `table` - enables the effect with the given filter settings
+- `effectSettings` ([`EffectSettings`](#effect-settings)) - the settings to use for the effect
 
 ##### `Taggable:removeEffect(name)`
-Unsets an effects on a taggable object.
+Unsets an effect on a taggable object.
 
 Parameters:
 - `name` (`string`) - the name of the effect to remove
 
 ##### `local effect = Taggable:getEffect(name)`
-Gets the effect definition of a taggable object.
-
-Returns one of the following:
-- `false` - the effect is explicitly disabled
-- `true` - the effect is enabled with no filter
-- `table` - the effect is enabled with the given filter settings
-- `nil` - the effect is not set on this object
+Returns the [EffectSettings](#effect-settings) for an effect on a taggable object.
 
 ### Sound
-Sounds represent a piece of audio that you can play back multiple times simultaneously with different pitches and volumes. Inherits from Taggable.
+Sounds represent a piece of audio that you can play back multiple times simultaneously with different pitches and volumes. Inherits from [Taggable](#taggable).
 
 #### Properties
 
@@ -114,17 +139,14 @@ Parameters:
 - `options` (`table`) (optional) - options to apply to this instance of the sound. The options table can have the following values:
   - `volume` (`number`) (optional, defaults to `1`) - the volume of the instance, from 0 to 1
   - `tags` (`table`) (optional) - a list of tags to apply to the instance
-  - `effects` (`table`) (optional) - the effects to apply to the instance. Each key should be the name of the effect, and each value should be one of the following:
-    - `true` - enables the effect without a filter
-    - `table` - enables the effect with the filter settings specified in the table
-    - `false` - explicitly disables the effect, even if the effect would normally be inherited from the parent sound or a tag
+  - `effects` (`table`) (optional) - the effects to apply to the instance. Each key should be the name of the effect, and each value should be an [`EffectSettings`](#effect-settings) value
   - `loop` (`boolean`) (optional) - whether the instance of the sound should be repeated until stopped
   - `pitch` (`number`) (optional, defaults to `1`) - the pitch to play the sound at - 2 would be twice as fast and one octave up, .5 would be half speed and one octave down
   - `seek` (`number`) (optional) - the position to start the sound at in seconds
   - `fadeDuration` (`number`) (optional) - the length of time to use to fade in the sound from silence
 
 Returns:
-- `instance` (`Instance`) - the new instance of the sound
+- `instance` ([`Instance`](#instance)) - the new instance of the sound
 
 ##### `Sound:pause(fadeDuration)`
 Pauses all instances of this sound.
@@ -145,7 +167,7 @@ Parameters:
 - `fadeDuration` (`number`) (optional) - the length of time to use to fade the sound to silence before stopping it
 
 ### Instance
-An instance is a single occurrence of a sound. Inherits from Taggable.
+An instance is a single occurrence of a sound. Inherits from [Taggable](#taggable).
 
 #### Properties
 
@@ -179,7 +201,7 @@ Parameters:
 - `fadeDuration` (`number`) (optional) - the length of time to use to fade the sound to silence before stopping it
 
 ### Tag
-A tag represents a category of sounds. You can apply it to sounds to control the volume and effect settings of multiple sounds at once.
+A tag represents a category of sounds. You can apply it to sounds to control the volume and effect settings of multiple sounds at once. Inherits from [Taggable](#taggable).
 
 #### Functions
 
@@ -200,6 +222,12 @@ Stops all of the sounds tagged with this tag.
 
 Parameters:
 - `fadeDuration` (`number`) (optional) - the length of time to use to fade the sound to silence before stopping it
+
+### EffectSettings
+Effect settings can either be:
+- `true` - enables an effect with no filter
+- `false` - explicitly disables an effect, even if normally an object would inherit an effect from a parent, like a tag or a sound
+- `table` - enables an effect with a filter with the specified settings
 
 ## Contributing
 
