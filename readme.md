@@ -11,92 +11,195 @@ ripple = require 'ripple' -- if your ripple.lua is in the root directory
 ripple = require 'path.to.ripple' -- if it's in subfolders
 ```
 
-## Usage
+## API
 
-### Loading sounds
+### ripple
+This is the main module that lets you create sounds and tags.
 
-```lua
-local sound = ripple.newSound(source, options)
-```
+#### Functions
 
-Use `ripple.newSound` to load a sound.
-- `source` - the Source or SoundData to use for the sound. Sources can be created using [`love.audio.newSource`](https://love2d.org/wiki/love.audio.newSource), and SoundData can be created using [`love.sound.newSoundData`](https://love2d.org/wiki/love.sound.newSoundData).
-- `options` (optional) - a table of additional options to apply to the sound. The table can have the following keys:
-    - `volume` (optional) - the volume of the sound, from 0 to 1. Defaults to 1.
-    - `tags` (optional) - a list of tags to apply to the sound (see below for more information on tags).
+##### `local sound = ripple.newSound(source, options)`
+Creates a new sound.
 
-### Playing sounds
+Parameters:
+- `source` (`Source`) - the source to use for the sound
+- `options` (`table`) (optional) - options to apply to the sound. The options table can have the following values:
+  - `volume` (`number`) (optional, defaults to `1`) - the volume of the sound, from 0 to 1
+  - `tags` (`table`) (optional) - a list of tags to apply to the sound
+  - `effects` (`table`) (optional) - the effects to apply to the sound. Each key should be the name of the effect, and each value should be one of the following:
+    - `true` - enables the effect without a filter
+    - `table` - enables the effect with the filter settings specified in the table
+    - `false` - explicitly disables the effect, even if the effect would normally be inherited from a tag
+  - `loop` (`boolean`) (optional) - whether the sound should be repeated until stopped
 
-```lua
-sound:play(options)
-```
+Returns:
+- `sound` (`Sound`) - the newly created sound
 
-Plays a sound. `options` is a table with the following keys, all of which are optional:
-- `volume` - sets the volume of this particular occurrence of the sound relative to the sound's main volume, from 0 to 1. Defaults to 1.
-- `pitch` - the pitch of this particular occurrence of the sound, in terms of a multiple of the default playback speed. Defaults to 1.
+##### `local tag = ripple.newTag(options)`
+Creates a new tag.
 
-### Tagging sounds
+Parameters:
+- `options` (`table`) (optional) - options to apply to the tag. The options table can have the following values:
+  - `volume` (`number`) (optional, defaults to `1`) - the volume of the tag, from 0 to 1
+  - `tags` (`table`) (optional) - a list of tags to apply to the tag
+  - `effects` (`table`) (optional) - the effects to apply to the tag. Each key should be the name of the effect, and each value should be one of the following:
+    - `true` - enables the effect without a filter
+    - `table` - enables the effect with the filter settings specified in the table
+    - `false` - explicitly disables the effect, even if the effect would normally be inherited from a tag
 
-To create a tag, use `ripple.newTag`:
+Returns:
+- `tag` (`Tag`) - the newly created tag
 
-```lua
-local tag = ripple.newTag()
-```
+### Taggable
+This class is not something you create directly, but it does contain functions you can use on any taggable object: sounds, instances, and tags.
 
-You can then add tags to sounds or remove them from sounds using `sound.tag` and `sound.untag`:
+#### Properties
 
-```lua
-sound:tag(tag1)
-sound:untag(tag2)
-```
+##### `Taggable.volume (number)`
+The volume of the taggable object from 0 to 1.
 
-If you don't want to add or remove tags individually, you can also specify an entire list of tags using `sound.setTags`:
+#### Functions
 
-```lua
-sound:setTags {tag1, tag2, ...}
-```
+##### `Taggable:tag(...)`
+Applies one or more tags to a taggable object.
 
-You can get a list of the tags a sound is currently tagged with using `sound.getTags`:
+Parameters:
+- `...` (`Tag`) - the tags to apply
 
-```lua
-local tags = sound:getTags()
-```
+##### `Taggable:untag(...)`
+Removes one or more tags from a taggable object.
 
-You can pause, resume, or stop all of the currently playing sounds with a tag using `tag:pause()`, `tag:resume()`, and `tag:stop()`.
+Parameters:
+- `...` (`Tag`) - the tags to remove
 
-### Adjusting volume levels
+##### `Taggable:setEffect(name, filterSettings)`
+Enables or disables an effect on a taggable object.
 
-You can adjust the volume of individual sounds by setting the `volume` property of a sound. You can also adjust the volume of a tag by setting its `volume` property. The overall volume level of a sound is its own volume multiplied by the volume of each of its tags. This allows you to easily set the volume of categories of sounds. For example, you could have separate "music" and "sfx" tags, and you can adjust the volume of all music tracks and sound effects at once by setting the volume of their respective tags.
+Parameters:
+- `name` (`string`) - the effect to enable or disable
+- `filterSettings` (`boolean` or `table`) (optional)
+  - `false` - explicitly disables the effect, even if the taggable object would normally inherit the effect
+  - `true` - enables the effect without any filter
+  - `table` - enables the effect with the given filter settings
 
-### Looping sounds
+##### `Taggable:removeEffect(name)`
+Unsets an effects on a taggable object.
 
-You can set whether a sound should loop or not using `sound.setLooping`:
+Parameters:
+- `name` (`string`) - the name of the effect to remove
 
-```lua
-sound:setLooping(true) -- enables looping
-sound:setLooping(false) -- disables looping
-```
+##### `local effect = Taggable:getEffect(name)`
+Gets the effect definition of a taggable object.
 
-### Using audio effects
+Returns one of the following:
+- `false` - the effect is explicitly disabled
+- `true` - the effect is enabled with no filter
+- `table` - the effect is enabled with the given filter settings
+- `nil` - the effect is not set on this object
 
-You can set a sound to use an effect defined by [`love.audio.setEffect`](https://love2d.org/wiki/love.audio.setEffect) using `sound.setEffect`:
+### Sound
+Sounds represent a piece of audio that you can play back multiple times simultaneously with different pitches and volumes. Inherits from Taggable.
 
-```lua
-sound:setEffect(name, filtersettings)
-```
+#### Properties
 
-- `name` - the name of the effect to use.
-- `filtersettings` (optional) - filter settings to apply to the sound (see [`Source:setEffect`](https://love2d.org/wiki/Source:setEffect)).
+##### `Sound.loop (boolean)`
+Whether the sound should be repeated until stopped.
 
-You can disable an effect by passing `false` as the second argument.
+#### Functions
 
-You can also set effects on tags using `tag.setEffect`:
+##### `local instance = Sound:play(options)`
+Plays a sound.
 
-```lua
-tag:setEffect(name, filtersettings)
-```
+Parameters:
+- `options` (`table`) (optional) - options to apply to this instance of the sound. The options table can have the following values:
+  - `volume` (`number`) (optional, defaults to `1`) - the volume of the instance, from 0 to 1
+  - `tags` (`table`) (optional) - a list of tags to apply to the instance
+  - `effects` (`table`) (optional) - the effects to apply to the instance. Each key should be the name of the effect, and each value should be one of the following:
+    - `true` - enables the effect without a filter
+    - `table` - enables the effect with the filter settings specified in the table
+    - `false` - explicitly disables the effect, even if the effect would normally be inherited from the parent sound or a tag
+  - `loop` (`boolean`) (optional) - whether the instance of the sound should be repeated until stopped
+  - `pitch` (`number`) (optional, defaults to `1`) - the pitch to play the sound at - 2 would be twice as fast and one octave up, .5 would be half speed and one octave down
+  - `seek` (`number`) (optional) - the position to start the sound at in seconds
+  - `fadeDuration` (`number`) (optional) - the length of time to use to fade in the sound from silence
 
-Tag effects will be applied to every sound with that tag.
+Returns:
+- `instance` (`Instance`) - the new instance of the sound
+
+##### `Sound:pause(fadeDuration)`
+Pauses all instances of this sound.
+
+Parameters:
+- `fadeDuration` (`number`) (optional) - the length of time to use to fade the sound to silence before pausing it
+
+##### `Sound:resume(fadeDuration)`
+Resumes all of the paused instances of this sound.
+
+Parameters:
+- `fadeDuration` (`number`) (optional) - the length of time to use to fade the sound from silence
+
+##### `Sound:stop(fadeDuration)`
+Stops all instances of this sound.
+
+Parameters:
+- `fadeDuration` (`number`) (optional) - the length of time to use to fade the sound to silence before stopping it
+
+### Instance
+An instance is a single occurrence of a sound. Inherits from Taggable.
+
+#### Properties
+
+##### `Instance.loop (boolean)`
+Whether this instance of a sound should be repeated until stopped.
+
+##### `Instance.pitch (number)`
+The pitch of the instance.
+
+#### Functions
+
+##### `local stopped = Instance:isStopped()`
+Returns if the instance is stopped, either because it reached the end of the sound or it was manually stopped. Note that stopped instances may be reused later.
+
+##### `Instance:pause(fadeDuration)`
+Pauses the instance.
+
+Parameters:
+- `fadeDuration` (`number`) (optional) - the length of time to use to fade the sound to silence before pausing it
+
+##### `Instance:resume(fadeDuration)`
+Resumes a paused instance.
+
+Parameters:
+- `fadeDuration` (`number`) (optional) - the length of time to use to fade the sound from silence
+
+##### `Instance:stop(fadeDuration)`
+Stops the instance.
+
+Parameters:
+- `fadeDuration` (`number`) (optional) - the length of time to use to fade the sound to silence before stopping it
+
+### Tag
+A tag represents a category of sounds. You can apply it to sounds to control the volume and effect settings of multiple sounds at once.
+
+#### Functions
+
+##### `Tag:pause(fadeDuration)`
+Pauses all of the sounds tagged with this tag.
+
+Parameters:
+- `fadeDuration` (`number`) (optional) - the length of time to use to fade the sound to silence before pausing it
+
+##### `Tag:resume(fadeDuration)`
+Resumes all of the paused sounds tagged with this tag.
+
+Parameters:
+- `fadeDuration` (`number`) (optional) - the length of time to use to fade the sound from silence
+
+##### `Tag:stop(fadeDuration)`
+Stops all of the sounds tagged with this tag.
+
+Parameters:
+- `fadeDuration` (`number`) (optional) - the length of time to use to fade the sound to silence before stopping it
 
 ## Contributing
 
