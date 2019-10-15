@@ -10,7 +10,7 @@ Ripple is an audio library for LÖVE that simplifies various aspects of audio ha
       - [`local tag = ripple.newTag(options)`](#local-tag--ripplenewtagoptions)
   - [Taggable](#taggable)
     - [Properties](#properties)
-      - [`Taggable.volume (number)`](#taggablevolume-number)
+      - [`volume (number)`](#volume-number)
     - [Functions](#functions-1)
       - [`Taggable:tag(...)`](#taggabletag)
       - [`Taggable:untag(...)`](#taggableuntag)
@@ -19,7 +19,7 @@ Ripple is an audio library for LÖVE that simplifies various aspects of audio ha
       - [`local effect = Taggable:getEffect(name)`](#local-effect--taggablegeteffectname)
   - [Sound](#sound)
     - [Properties](#properties-1)
-      - [`Sound.loop (boolean)`](#soundloop-boolean)
+      - [`loop (boolean)`](#loop-boolean)
     - [Functions](#functions-2)
       - [`local instance = Sound:play(options)`](#local-instance--soundplayoptions)
       - [`Sound:pause(fadeDuration)`](#soundpausefadeduration)
@@ -27,8 +27,8 @@ Ripple is an audio library for LÖVE that simplifies various aspects of audio ha
       - [`Sound:stop(fadeDuration)`](#soundstopfadeduration)
   - [Instance](#instance)
     - [Properties](#properties-2)
-      - [`Instance.loop (boolean)`](#instanceloop-boolean)
-      - [`Instance.pitch (number)`](#instancepitch-number)
+      - [`loop (boolean)`](#loop-boolean-1)
+      - [`pitch (number)`](#pitch-number)
     - [Functions](#functions-3)
       - [`local stopped = Instance:isStopped()`](#local-stopped--instanceisstopped)
       - [`Instance:pause(fadeDuration)`](#instancepausefadeduration)
@@ -89,7 +89,7 @@ This class is not something you create directly, but it does contain functions y
 
 #### Properties
 
-##### `Taggable.volume (number)`
+##### `volume (number)`
 The volume of the taggable object from 0 to 1.
 
 #### Functions
@@ -127,7 +127,7 @@ Sounds represent a piece of audio that you can play back multiple times simultan
 
 #### Properties
 
-##### `Sound.loop (boolean)`
+##### `loop (boolean)`
 Whether the sound should be repeated until stopped.
 
 #### Functions
@@ -171,10 +171,10 @@ An instance is a single occurrence of a sound. Inherits from [Taggable](#taggabl
 
 #### Properties
 
-##### `Instance.loop (boolean)`
+##### `loop (boolean)`
 Whether this instance of a sound should be repeated until stopped.
 
-##### `Instance.pitch (number)`
+##### `pitch (number)`
 The pitch of the instance.
 
 #### Functions
