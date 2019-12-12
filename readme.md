@@ -1,55 +1,188 @@
 # Ripple <!-- omit in toc -->
-
 Ripple is an audio library for LÖVE that simplifies various aspects of audio handling, including tagging and playing multiple instances of a sound.
 
 - [Installation](#installation)
+- [Usage](#usage)
+  - [Creating a sound](#creating-a-sound)
+  - [Playing sounds](#playing-sounds)
+  - [Pausing, resuming, and stopping sounds](#pausing-resuming-and-stopping-sounds)
+  - [Tags](#tags)
+  - [Effects](#effects)
 - [API](#api)
   - [ripple](#ripple)
     - [Functions](#functions)
-      - [`local sound = ripple.newSound(source, options)`](#local-sound--ripplenewsoundsource-options)
-      - [`local tag = ripple.newTag(options)`](#local-tag--ripplenewtagoptions)
+      - [local sound = ripple.newSound(source, options)](#local-sound--ripplenewsoundsource-options)
+      - [local tag = ripple.newTag(options)](#local-tag--ripplenewtagoptions)
   - [Taggable](#taggable)
     - [Properties](#properties)
-      - [`volume (number)`](#volume-number)
+      - [volume (number)](#volume-number)
     - [Functions](#functions-1)
-      - [`Taggable:tag(...)`](#taggabletag)
-      - [`Taggable:untag(...)`](#taggableuntag)
-      - [`Taggable:setEffect(name, effectSettings)`](#taggableseteffectname-effectsettings)
-      - [`Taggable:removeEffect(name)`](#taggableremoveeffectname)
-      - [`local effect = Taggable:getEffect(name)`](#local-effect--taggablegeteffectname)
+      - [Taggable:tag(...)](#taggabletag)
+      - [Taggable:untag(...)](#taggableuntag)
+      - [Taggable:setEffect(name, effectSettings)](#taggableseteffectname-effectsettings)
+      - [Taggable:removeEffect(name)](#taggableremoveeffectname)
+      - [local effect = Taggable:getEffect(name)](#local-effect--taggablegeteffectname)
   - [Sound](#sound)
     - [Properties](#properties-1)
-      - [`loop (boolean)`](#loop-boolean)
+      - [loop (boolean)](#loop-boolean)
     - [Functions](#functions-2)
-      - [`local instance = Sound:play(options)`](#local-instance--soundplayoptions)
-      - [`Sound:pause(fadeDuration)`](#soundpausefadeduration)
-      - [`Sound:resume(fadeDuration)`](#soundresumefadeduration)
-      - [`Sound:stop(fadeDuration)`](#soundstopfadeduration)
+      - [local instance = Sound:play(options)](#local-instance--soundplayoptions)
+      - [Sound:pause(fadeDuration)](#soundpausefadeduration)
+      - [Sound:resume(fadeDuration)](#soundresumefadeduration)
+      - [Sound:stop(fadeDuration)](#soundstopfadeduration)
   - [Instance](#instance)
     - [Properties](#properties-2)
-      - [`loop (boolean)`](#loop-boolean-1)
-      - [`pitch (number)`](#pitch-number)
+      - [loop (boolean)](#loop-boolean-1)
+      - [pitch (number)](#pitch-number)
     - [Functions](#functions-3)
-      - [`local stopped = Instance:isStopped()`](#local-stopped--instanceisstopped)
-      - [`Instance:pause(fadeDuration)`](#instancepausefadeduration)
-      - [`Instance:resume(fadeDuration)`](#instanceresumefadeduration)
-      - [`Instance:stop(fadeDuration)`](#instancestopfadeduration)
+      - [local stopped = Instance:isStopped()](#local-stopped--instanceisstopped)
+      - [Instance:pause(fadeDuration)](#instancepausefadeduration)
+      - [Instance:resume(fadeDuration)](#instanceresumefadeduration)
+      - [Instance:stop(fadeDuration)](#instancestopfadeduration)
   - [Tag](#tag)
     - [Functions](#functions-4)
-      - [`Tag:pause(fadeDuration)`](#tagpausefadeduration)
-      - [`Tag:resume(fadeDuration)`](#tagresumefadeduration)
-      - [`Tag:stop(fadeDuration)`](#tagstopfadeduration)
+      - [Tag:pause(fadeDuration)](#tagpausefadeduration)
+      - [Tag:resume(fadeDuration)](#tagresumefadeduration)
+      - [Tag:stop(fadeDuration)](#tagstopfadeduration)
   - [EffectSettings](#effectsettings)
 - [Contributing](#contributing)
 
 ## Installation
-
 To use Ripple, place ripple.lua in your project, and then add this code to your main.lua:
 
 ```lua
 ripple = require 'ripple' -- if your ripple.lua is in the root directory
 ripple = require 'path.to.ripple' -- if it's in subfolders
 ```
+
+## Usage
+
+### Creating a sound
+```lua
+local source = love.audio.newSource('sound.wav', 'static')
+local sound = ripple.newSound(source)
+```
+
+This creates a new sound with the default settings. You can also pass an options table as the second argument:
+```lua
+local sound = ripple.newSound(source, {
+  volume = .5,
+  loop = true,
+})
+```
+
+You can also change a sound's options after the fact by modifying the properties directly:
+```lua
+sound.volume = .75
+sound.loop = false
+```
+
+See the [API](#local-sound--ripplenewsoundsource-options) for the full list of options.
+
+### Playing sounds
+```lua
+local instance = sound:play()
+```
+
+Playing a sound returns an instance, which represents an occurrence of a sound. For example, if you play a bird sound 4 times in quick succession, you will hear 4 birds simultaneously, and each one would be represented by a separate instance.
+
+Like with `ripple.newSound`, you can pass an options table to `sound.play`:
+```lua
+local instance = sound:play {
+  volume = .5,
+  pitch = 2,
+}
+```
+
+Unlike `ripple.newSound`, this options table will only affect this specific instance of the sound.
+
+### Pausing, resuming, and stopping sounds
+```lua
+-- controls all of the currently playing instances of a sound
+sound:pause()
+sound:resume()
+sound:stop()
+
+-- controls a specific instance
+instance:pause()
+instance:resume()
+instance:stop()
+```
+
+You can pause, resume, and stop sounds and instances using the corresponding functions. All of these functions can optionally take a `fadeDuration` parameter, which will cause the sound or instance to fade in or out over the specified duration of time (in seconds).
+```lua
+sound:pause(.3)
+sound:resume(.5)
+```
+
+Note that for these functions to work correctly, you have to call `sound.update` somewhere in your `love.update` callback:
+```lua
+sound:update(dt)
+```
+
+### Tags
+**Tags** act as categories for sounds and instances. You can create them using `ripple.newTag`:
+```lua
+local music = ripple.newTag()
+local sfx = ripple.newTag()
+```
+
+And you can apply them to sounds and instances by using `tag` and `untag`:
+```lua
+backgroundMusic1:tag(music)
+birdCall:tag(sfx)
+```
+
+Tags themselves can be tagged, leading to nested tags:
+```lua
+local ambience = ripple.newTag()
+ambience:tag(sfx)
+```
+
+As a shortcut, you can set these tags in the options table when you create a sound or instance:
+```lua
+local birdCall = ripple.newSound(love.audio.newSource 'bird.wav', 'static', {
+  tags = {sfx},
+})
+
+local farAwayBirdCall = birdCall:play {tags = {ambience}}
+```
+
+The most common use for tags is to set the relative volume of a large group of sounds. For example, we could immediately make every sound or instance tagged with "ambience" quieter:
+```lua
+ambience.volume = .25
+```
+
+You can also pause, resume, or stop all sounds tagged with a certain tag:
+```lua
+ambience:pause(1)
+ambience:resume(2)
+ambience:stop()
+```
+
+### Effects
+You can apply LÖVE effects to a sound, instance, or tag.
+
+```lua
+love.audio.setEffect('ambient', {type = 'reverb'})
+tag.ambience:setEffect('ambient', true)
+```
+
+An effect can be set to:
+- `true` - uses an effect without any filter
+- `table` - uses an effect with the specified [filter settings](https://love2d.org/wiki/Source:setEffect)
+- `false` - explicitly disables the filter, even if it would normally be inherited from a parent sound or tag
+
+In this example, most bird calls would have reverb from the "ambient" effect, but this specific one would not:
+```lua
+birdCall:play {
+  effects = {
+    ambient = false,
+  }
+}
+```
+
+See [here](https://love2d.org/wiki/love.audio.setEffect) for information on how to define audio effects.
 
 ## API
 
@@ -230,5 +363,4 @@ Effect settings can either be:
 - `table` - enables an effect with a filter with the specified settings
 
 ## Contributing
-
 This library is still in early development, so feel free to report bugs, make pull requests, or just make suggestions about the code or design of the library. To run the test project, run `lovec .` in the ripple base directory.
