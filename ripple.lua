@@ -1,3 +1,4 @@
+--- Audio helpers for LÖVE.
 local ripple = {
 	_VERSION = 'Ripple',
 	_DESCRIPTION = 'Audio helpers for LÖVE.',
@@ -40,7 +41,13 @@ local unpack = unpack or table.unpack -- luacheck: ignore
 	Note that not all taggable objects have children - tags and sounds
 	do, but instances do not.
 ]]
+
+--- Represents an object that can have tags applied.
+-- @type Taggable
 local Taggable = {}
+
+--- The volume of the object.
+-- @number volume
 
 --[[
 	Gets the total volume of this object given its own volume
@@ -149,6 +156,8 @@ function Taggable:_setOptions(options)
 	self:_onChangeEffects()
 end
 
+--- Applies tags to the object.
+-- @param ... the tags to apply
 function Taggable:tag(...)
 	for i = 1, select('#', ...) do
 		local tag = select(i, ...)
@@ -158,6 +167,8 @@ function Taggable:tag(...)
 	self:_onChangeEffects()
 end
 
+--- Removes tags from the object.
+-- @param ... the tags to remove
 function Taggable:untag(...)
 	for i = 1, select('#', ...) do
 		local tag = select(i, ...)
@@ -167,23 +178,30 @@ function Taggable:untag(...)
 	self:_onChangeEffects()
 end
 
---[[
-	Sets an effect for this object. filterSettings can be the following types:
-	- table - the effect will be enabled with the filter settings given in the table
-	- true/nil - the effect will be enabled with no filter
-	- false - the effect will be explicitly disabled, overriding effect settings
-	from a parent sound or tag
-]]
+--- Enables or disables an effect for this object.
+-- @string name the name of the effect
+-- @tparam[opt=true] boolean|table filterSettings can be:
+--
+-- - `true` - enables the effect without a filter
+-- - `false` - explicitly disables the effect for this object,
+-- even if a parent has it enabled
+-- - `table` - enables the effect with a filter defined. See the documentation
+-- for [`Source:setEffect`](https://www.love2d.org/wiki/Source:setEffect) for more details.
 function Taggable:setEffect(name, filterSettings)
 	self:_setEffect(name, filterSettings)
 	self:_onChangeEffects()
 end
 
+--- Removes an effect setting for this object.
+-- @string name the name of the effect
 function Taggable:removeEffect(name)
 	self._effects[name] = nil
 	self:_onChangeEffects()
 end
 
+--- Gets an effect setting for this object.
+-- @string name the name of the effect
+-- @treturn nil|boolean|table
 function Taggable:getEffect(name)
 	return self._effects[name]
 end
@@ -203,10 +221,14 @@ function Taggable:__newindex(key, value)
 	end
 end
 
---[[
-	Represents a tag that can be applied to sounds,
-	instances of sounds, or other tags.
-]]
+--- Represents a category of sounds.
+--
+-- Tags can have their own volume and effect settings,
+-- and these will automatically be applied to any sound
+-- the tag is applied to.
+--
+-- Extends from @{Taggable}.
+-- @type Tag
 local Tag = {__newindex = Taggable.__newindex}
 
 function Tag:__index(key)
@@ -230,27 +252,44 @@ function Tag:_onChangeEffect()
 	end
 end
 
--- Pauses all the sounds and instances tagged with this tag.
+--- Pauses all the sounds and instances tagged with this tag.
+-- @number[opt=0] fadeDuration the amount of time to spend fading
+-- sounds out
 function Tag:pause(fadeDuration)
 	for child, _ in pairs(self._children) do
 		child:pause(fadeDuration)
 	end
 end
 
--- Resumes all the sounds and instances tagged with this tag.
+--- Resumes all the sounds and instances tagged with this tag.
+-- @number[opt=0] fadeDuration the amount of time to spend fading
+-- sounds in
 function Tag:resume(fadeDuration)
 	for child, _ in pairs(self._children) do
 		child:resume(fadeDuration)
 	end
 end
 
--- Stops all the sounds and instances tagged with this tag.
+--- Stops all the sounds and instances tagged with this tag.
+-- @number[opt=0] fadeDuration the amount of time to spend fading
+-- sounds out
 function Tag:stop(fadeDuration)
 	for child, _ in pairs(self._children) do
 		child:stop(fadeDuration)
 	end
 end
 
+--- @section end
+
+--- Creates a new tag.
+-- @tparam[opt] table options can contain:
+--
+-- - `volume` (`number`) - the volume of this tag
+-- - `tags` (`table`) - a list of tags to apply to this tag
+-- - `effects` (`table`) - a dictionary of effect settings for this tag,
+-- where each key is the name an effect, and each value is a boolean
+-- or table containing filter settings
+-- @treturn Tag
 function ripple.newTag(options)
 	local tag = setmetatable({
 		_effects = {},
@@ -261,9 +300,21 @@ function ripple.newTag(options)
 	return tag
 end
 
--- Represents a specific occurrence of a sound.
+--- Represents a specific occurrence of a @{Sound}.
+--
+-- Each time you play a sound, an instance is created.
+--
+-- Extends from @{Taggable}.
+-- @type Instance
 local Instance = {}
 
+--- The pitch of the instance (as a multiplier of the original pitch).
+-- @tfield number pitch
+
+--- Whether the instance should repeat after it finishes.
+-- @tfield boolean loop
+
+---
 function Instance:__index(key)
 	if key == 'pitch' then
 		return self._source:getPitch()
@@ -382,10 +433,15 @@ function Instance:_update(dt)
 	end
 end
 
+--- Gets whether the instance has finished playing.
+-- @treturn boolean
 function Instance:isStopped()
 	return (not self._source:isPlaying()) and (not self._paused)
 end
 
+--- Pauses the instance.
+-- @number[opt=0] fadeDuration the amount of time to spend fading
+-- the instance out
 function Instance:pause(fadeDuration)
 	if fadeDuration and not self._paused then
 		self._fadeDirection = -1
@@ -397,6 +453,9 @@ function Instance:pause(fadeDuration)
 	end
 end
 
+--- Resumes the instance.
+-- @number[opt=0] fadeDuration the amount of time to spend fading
+-- the instance in
 function Instance:resume(fadeDuration)
 	if fadeDuration then
 		if self._paused then
@@ -410,6 +469,9 @@ function Instance:resume(fadeDuration)
 	self._paused = false
 end
 
+--- Stops the instance.
+-- @number[opt=0] fadeDuration the amount of time to spend fading
+-- the instance out
 function Instance:stop(fadeDuration)
 	if fadeDuration and not self._paused then
 		self._fadeDirection = -1
@@ -421,9 +483,16 @@ function Instance:stop(fadeDuration)
 	end
 end
 
--- Represents a sound that can be played.
+--- Represents a sound that can be played.
+--
+-- Extends from @{Taggable}.
+-- @type Sound
 local Sound = {}
 
+--- Whether new instances of this sound should repeat after they finish.
+-- @tfield boolean loop
+
+---
 function Sound:__index(key)
 	if key == 'loop' then
 		return self._source:isLooping()
@@ -458,6 +527,21 @@ function Sound:_onChangeEffects()
 	end
 end
 
+--- Plays the sound.
+-- @tparam[opt] table options can contain:
+--
+-- - `volume` (`number`) - the volume of this tag
+-- - `tags` (`table`) - a list of tags to apply to this tag
+-- - `effects` (`table`) - a dictionary of effect settings for this tag,
+-- where each key is the name an effect, and each value is a boolean
+-- or table containing filter settings
+-- - `fadeDuration` (`number`) - the amount of time to fade in the
+-- sound
+-- - `pitch` (`number`) - the pitch of the sound (as a multiplier of the
+-- original pitch)
+-- - `loop` (`boolean`) - whether the sound should repeat after it finishes
+-- - `seek` (`number`) - where playback of the sound should start
+-- @treturn Instance
 function Sound:play(options)
 	-- reuse a stopped instance if one is available
 	for _, instance in ipairs(self._instances) do
@@ -479,30 +563,57 @@ function Sound:play(options)
 	return instance
 end
 
+--- Pauses all instances of this sound.
+-- @number[opt=0] fadeDuration the amount of time to spend fading
+-- the instances out
 function Sound:pause(fadeDuration)
 	for _, instance in ipairs(self._instances) do
 		instance:pause(fadeDuration)
 	end
 end
 
+--- Resumes all instances of this sound.
+-- @number[opt=0] fadeDuration the amount of time to spend fading
+-- the instances in
 function Sound:resume(fadeDuration)
 	for _, instance in ipairs(self._instances) do
 		instance:resume(fadeDuration)
 	end
 end
 
+--- Stops all instances of this sound.
+-- @number[opt=0] fadeDuration the amount of time to spend fading
+-- the instances out
 function Sound:stop(fadeDuration)
 	for _, instance in ipairs(self._instances) do
 		instance:stop(fadeDuration)
 	end
 end
 
+--- Updates volume fades for this sound.
+--
+-- You only need to call this if you're using the `fadeDuration`
+-- argument to fade instances of this sound in or out.
+-- @number dt the time elapsed since the last frame
 function Sound:update(dt)
 	for _, instance in ipairs(self._instances) do
 		instance:_update(dt)
 	end
 end
 
+--- @section end
+
+--- Creates a new sound.
+-- @tparam Source source the love.audio source for this sound to use
+-- @tparam[opt] table options can contain:
+--
+-- - `volume` (`number`) - the volume of this tag
+-- - `tags` (`table`) - a list of tags to apply to this tag
+-- - `effects` (`table`) - a dictionary of effect settings for this tag,
+-- where each key is the name an effect, and each value is a boolean
+-- or table containing filter settings
+-- - `loop` (`boolean`) - whether this sound should repeat after finishing
+-- @treturn Sound
 function ripple.newSound(source, options)
 	local sound = setmetatable({
 		_source = source,
