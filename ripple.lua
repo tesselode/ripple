@@ -251,6 +251,13 @@ function Tag:stop(fadeDuration)
 	end
 end
 
+-- Updates all the sounds and instances tagged with this tag.
+function Tag:update(dt)
+	for child, _ in pairs(self._children) do
+		child:update(dt)
+	end
+end
+
 function ripple.newTag(options)
 	local tag = setmetatable({
 		_effects = {},
