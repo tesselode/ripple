@@ -503,6 +503,16 @@ function Sound:update(dt)
 	end
 end
 
+function Sound:allStopped()
+	for _, instance in ipairs(self._instances) do
+		if not instance:isStopped() then
+			return false
+		end
+	end
+
+	return true
+end
+
 function ripple.newSound(source, options)
 	local sound = setmetatable({
 		_source = source,
